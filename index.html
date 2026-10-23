@@ -355,6 +355,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
       <button class="btn" id="tCsvIn" data-i18n="tCsvIn">📄 Importa CSV</button>
       <button class="btn" id="tLang"></button>
       <button class="btn" id="tHealth" data-i18n="tHealth">🩺 Verifica servizi</button>
+      <button class="btn" id="tIdx">🔄 Indice offline: guida</button>
       <button class="btn" id="tDiag" data-i18n="tDiag">🩺 Diagnostica</button>
     </div>
     <p class="note" id="tInfo" style="margin-top:14px"></p>
@@ -391,6 +392,14 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
   </div>
 </div>
 
+<div class="ov" id="idxOv" role="dialog" aria-modal="true" aria-labelledby="idxH">
+  <div class="sheet narrow">
+    <button class="x" data-close aria-label="Chiudi">×</button>
+    <h2 id="idxH">🔄 Indice offline</h2>
+    <div id="idxBody"></div>
+  </div>
+</div>
+
 <div class="ov" id="installOv" role="dialog" aria-modal="true" aria-labelledby="instH">
   <div class="sheet narrow">
     <button class="x" data-close aria-label="Chiudi">×</button>
@@ -409,7 +418,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
    Fonti: Google Books (edizioni, trame; senza chiave) e Open Library
    (edizioni, opere, copertine; libera). Tutto resta sul dispositivo.
    ===================================================================== */
-const APP_VERSION = 'books-2026-10-2';
+const APP_VERSION = 'books-2026-10-3';
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r=>setTimeout(r, ms));
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
@@ -550,10 +559,27 @@ function gbItem(it){
   return { src: 'gb', id: it.id, title: v.title || '', sub: v.subtitle || '', authors: v.authors || [], publisher: v.publisher || '', year: String(v.publishedDate || '').slice(0, 4),
     pages: v.pageCount || '', isbn: i13 || (i10 ? isbn10to13(digits(i10)) : ''), lang: v.language || '', cats: v.categories || [], desc: stripHtml(v.description || ''), cover: img };
 }
+let _gbCool = 0;
 async function gbSearch(o){
+  if(Date.now() < _gbCool) throw new Error('http429');
   const q = o.isbn ? 'isbn:' + o.isbn : [o.title ? 'intitle:' + o.title : '', o.author ? 'inauthor:' + o.author : ''].filter(Boolean).join('+');
-  const j = await jget(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=20&printType=books`);
+  let j; try{ j = await jget(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=20&printType=books`); }
+  catch(e){ if(/http429/.test(String(e.message))) _gbCool = Date.now() + 60000; throw e; }
   return ((j && j.items) || []).map(gbItem);
+}
+/* ---------- Indice offline (data/books-index.json, rigenerato ogni mese da GitHub Actions) ---------- */
+let IDX = null;
+const nrm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+async function loadIdx(){ try{ const r = await fetch('data/books-index.json'); if(!r.ok) return; const j = await r.json(); if(!j || !Array.isArray(j.b)) return; j.by = new Map(j.b.map(x=>[x[0], x])); IDX = j; }catch(e){} }
+function idxItem(x){ return { src: 'ix', id: '', title: x[1], sub: '', authors: x[2] ? x[2].split(' | ') : [], publisher: '', year: x[3] || '', pages: '', isbn: x[0], lang: x[4] || '', cats: [], desc: '', cover: '' }; }
+function idxGet(isbn){ const x = IDX && IDX.by.get(isbn); return x ? idxItem(x) : null; }
+function idxSearch(o){
+  if(!IDX) return [];
+  const tt = nrm(o.title).split(' ').filter(Boolean), at = nrm(o.author).split(' ').filter(Boolean), out = [];
+  if(!tt.length && !at.length) return out;
+  for(const x of IDX.b){ if(x._t === undefined){ x._t = nrm(x[1]); x._a = nrm(x[2]); }
+    if(tt.every(w=>x._t.includes(w)) && at.every(w=>x._a.includes(w))){ out.push(idxItem(x)); if(out.length >= 15) break; } }
+  return out;
 }
 const OL_FIELDS = 'key,title,subtitle,author_name,first_publish_year,cover_i,edition_count,isbn,language,publisher,number_of_pages_median';
 async function olSearch(o){
@@ -567,8 +593,8 @@ function translatorFrom(s){ const m = String(s || '').match(/(?:trad(?:uzione|ot
 function physFormat(s){ s = String(s || '').toLowerCase(); if(/hard|rileg|cartonat/.test(s)) return 'rilegato'; if(/mass market|pocket|tascab/.test(s)) return 'tascabile'; if(/paper|bross|soft/.test(s)) return 'brossura'; if(/box|cofanett/.test(s)) return 'cofanetto'; return s ? 'altro' : ''; }
 async function lookupIsbn(isbn, seed){
   const [g, e, o] = await Promise.allSettled([gbSearch({ isbn }), olEdition(isbn), olSearch({ isbn })]);
-  if(g.status === 'rejected' && e.status === 'rejected' && o.status === 'rejected') throw new Error('src');
-  const gb = seed || (g.status === 'fulfilled' && g.value[0]) || null, ed = e.status === 'fulfilled' ? e.value : null, ol = o.status === 'fulfilled' ? (o.value[0] || null) : null;
+  if(g.status === 'rejected' && e.status === 'rejected' && o.status === 'rejected' && !idxGet(isbn)) throw new Error('src');
+  const gb = seed || (g.status === 'fulfilled' && g.value[0]) || idxGet(isbn) || null, ed = e.status === 'fulfilled' ? e.value : null, ol = o.status === 'fulfilled' ? (o.value[0] || null) : null;
   if(!gb && !ed && !ol) return null;
   const x = { isbn };
   x.titolo = (gb && gb.title) || (ed && ed.title) || (ol && ol.title) || '';
@@ -768,14 +794,15 @@ async function loadIsbn(isbn, seed){
 async function runFind(){
   const o = { title: $('sTitle').value.trim(), author: $('sAuthor').value.trim(), isbn: $('sIsbn').value.trim() };
   if(!o.title && !o.author && !o.isbn){ toast(t('needQuery')); return; }
-  if(navigator.onLine === false){ toast(t('offline')); return; }
+  if(navigator.onLine === false && !IDX){ toast(t('offline')); return; }
   if(o.isbn){ const i = toIsbn13(o.isbn); if(!i){ toast(t('badIsbn')); return; } return loadIsbn(i); }
   const box = $('results'), btn = $('findBtn');
   box.innerHTML = `<div class="note">${t('searching')}</div>`; btn.disabled = true;
   try{
     const [g, ol] = await Promise.allSettled([gbSearch(o), olSearch(o)]);
-    if(g.status === 'rejected' && ol.status === 'rejected') throw new Error('src');
-    _gb = g.status === 'fulfilled' ? g.value : []; _ol = ol.status === 'fulfilled' ? ol.value : [];
+    const ix = idxSearch(o);
+    if(g.status === 'rejected' && ol.status === 'rejected' && !ix.length) throw new Error('src');
+    _gb = g.status === 'fulfilled' ? g.value : []; _gb = _gb.concat(ix.filter(x=>!_gb.some(y=>y.isbn && y.isbn === x.isbn))); _ol = ol.status === 'fulfilled' ? ol.value : [];
     const row = (x, k, i) => `<button type="button" class="res" data-${k}="${i}">${x.cover ? `<img src="${esc(x.cover)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">` : '<span class="noimg"></span>'}<span style="min-width:0"><b>${esc(x.title)}${x.sub ? ': ' + esc(x.sub) : ''}</b><span>${esc(x.authors.join(', '))}</span><span>${esc(k === 'g' ? [t('resEdition'), x.publisher, x.year, x.isbn, x.pages ? t('pages', { n: x.pages }) : '', x.lang ? langName(x.lang) : ''].filter(Boolean).join(', ') : [t('resWork', { n: x.editions }), x.firstYear].filter(Boolean).join(', '))}</span></span></button>`;
     box.innerHTML = (_gb.length || _ol.length) ? _gb.map((x, i)=>row(x, 'g', i)).join('') + _ol.map((x, i)=>row(x, 'o', i)).join('') : `<div class="note">${t('noResults')}</div>`;
   }catch(e){ box.innerHTML = `<div class="note">${t('srcError')}</div>`; }
@@ -1246,11 +1273,13 @@ async function runHealth(){
   const add = r => { res.push(r); draw(false); };
   draw(false);
   add({ name: t('hcNet'), ok: navigator.onLine !== false, ms: null, det: navigator.onLine === false ? t('offline') : t('hcOnline') });
-  add(await probe('Google Books', async ()=>{ const j = await jget('https://www.googleapis.com/books/v1/volumes?q=isbn:9780140449136'); return { warn: !(j && j.totalItems >= 0), det: t('hcAnswered') }; }));
+  add(await probe('Google Books', async ()=>{ try{ const j = await jget('https://www.googleapis.com/books/v1/volumes?q=isbn:9780140449136'); return { warn: !(j && j.totalItems >= 0), det: t('hcAnswered') }; }
+    catch(e){ if(/http429/.test(String(e.message))) return { warn: true, det: LANG === 'en' ? 'rate limit (429): the app switches to Open Library and the offline index' : 'limite di richieste (429): l\'app passa a Open Library e all\'indice offline' }; throw e; } }));
   add(await probe('Open Library', async ()=>{ const j = await jget('https://openlibrary.org/search.json?q=dante&limit=1&fields=key'); return { warn: !(j && j.docs), det: t('hcAnswered') }; }));
   add(await probe(t('hcCovers'), async ()=>{ await fetch('https://covers.openlibrary.org/b/id/8231856-S.jpg', { mode: 'no-cors' }); return {}; }));
   add(await probe('Wikidata', async ()=>{ const e = await wdEntities(['Q1067'], 'labels'); return { warn: !e.Q1067 }; }));
   add(await probe('Wikipedia', async ()=>{ const j = await jget('https://en.wikipedia.org/api/rest_v1/page/summary/Dante_Alighieri'); return { warn: !(j && j.extract) }; }));
+  add({ name: LANG === 'en' ? 'Offline index' : 'Indice offline', ok: true, warn: !IDX || !IDX.b.length, ms: null, det: IDX ? `${IDX.b.length} ${LANG === 'en' ? 'books' : 'libri'} · ${String(IDX.built || '').slice(0, 10) || '—'}` : (LANG === 'en' ? 'not loaded' : 'non caricato') });
   let st = { ok: STORAGE_KIND === 'IndexedDB', warn: STORAGE_KIND !== 'IndexedDB', det: STORAGE_KIND };
   try{ if(navigator.storage && navigator.storage.estimate){ const e = await navigator.storage.estimate(); const pers = navigator.storage.persisted ? await navigator.storage.persisted() : false; st.det = `${STORAGE_KIND} · ${(e.usage / 1048576).toFixed(1)} MB` + (pers ? ' · ' + t('hcPersist') : ''); } }catch(e){}
   add(Object.assign({ name: t('hcStorage'), ms: null }, st));
@@ -1263,6 +1292,37 @@ async function runHealth(){
 $('tHealth').addEventListener('click', ()=>{ closeOv('toolsOv'); openOv('hcOv'); runHealth(); });
 $('hcOv').addEventListener('click', async e=>{ if(e.target.closest('#hcAgain')){ runHealth(); return; } if(e.target.closest('#hcCopy')){ try{ await navigator.clipboard.writeText($('hcBody').dataset.report || ''); toast(t('copied')); }catch(err){} } });
 
+/* ---------- 🔄 Guida indice offline (workflow GitHub) ---------- */
+const WF_YAML = ['name: Aggiorna indice libri', 'on:', "  schedule: [{ cron: '17 4 1 * *' }]", '  workflow_dispatch: {}', 'permissions:', '  contents: write', 'jobs:', '  build:', '    runs-on: ubuntu-latest', '    steps:', '      - uses: actions/checkout@v4', '      - uses: actions/setup-node@v4', '        with: { node-version: 20 }', '      - run: node scripts/build-index.mjs', '      - run: |', '          git config user.name "indice-bot"; git config user.email "actions@users.noreply.github.com"', '          git add -A; git diff --cached --quiet || (git commit -m "Indice libri aggiornato" && git push)'].join('\n') + '\n';
+function renderIdxGuide(){
+  const en = LANG === 'en', n = IDX && IDX.b ? IDX.b.length : 0, when = IDX && IDX.built ? String(IDX.built).slice(0, 10) : '';
+  const state = n ? (en ? `✅ Index active: ${n} books, updated ${when}. It now refreshes itself every month.` : `✅ Indice attivo: ${n} libri, aggiornato il ${when}. Ora si aggiorna da solo ogni mese.`)
+    : (en ? '⚠️ Index still empty: follow the steps below once.' : '⚠️ Indice ancora vuoto: segui una volta sola i passi qui sotto.');
+  const steps = en ? [
+    'Make sure the repository contains <b>index.html, sw.js, manifest.webmanifest</b> and the folders <b>icons</b>, <b>data</b> and <b>scripts</b> (with <code>build-index.mjs</code> inside). Upload them with “Add file → Upload files”.',
+    'Repository <b>Settings → Actions → General</b> → section “Workflow permissions” → choose <b>Read and write permissions</b> → Save. (Without this the monthly commit fails.)',
+    '<b>Add file → Create new file</b>. In the name field type exactly <code>.github/workflows/update-index.yml</code> (typing the slashes creates the folders). Folders starting with a dot are often skipped by uploads, which is why you create this one by hand.',
+    'Tap “Copy workflow” below, paste it into the file, then <b>Commit changes</b>.',
+    'Open the <b>Actions</b> tab → “Aggiorna indice libri” on the left → <b>Run workflow</b> → Run. If GitHub asks, enable workflows first. It takes about 5–15 minutes; wait for the green ✓.',
+    'Check: the file <code>data/books-index.json</code> in the repository is now large. In the app: ⋯ → 🩺 Check services → “Offline index” shows the number of books (reopen the app twice if it still shows 0).',
+    'Done. From now on it runs by itself on the <b>1st of every month</b>: it adds recent books, digs a few more years into the past, and refreshes the installed app. You never have to do this again.'
+  ] : [
+    'Controlla che nel repository ci siano <b>index.html, sw.js, manifest.webmanifest</b> e le cartelle <b>icons</b>, <b>data</b> e <b>scripts</b> (dentro c\'è <code>build-index.mjs</code>). Si caricano con “Add file → Upload files”.',
+    'Nel repository: <b>Settings → Actions → General</b> → sezione “Workflow permissions” → scegli <b>Read and write permissions</b> → Save. (Senza questo, il salvataggio automatico del mese fallisce.)',
+    '<b>Add file → Create new file</b>. Nel campo del nome scrivi esattamente <code>.github/workflows/update-index.yml</code> (scrivendo le barre si creano le cartelle). Le cartelle che iniziano con un punto spesso vengono saltate dal caricamento: per questo questo file si crea a mano.',
+    'Qui sotto premi “Copia il workflow”, incollalo nel file e premi <b>Commit changes</b>.',
+    'Apri la scheda <b>Actions</b> → a sinistra “Aggiorna indice libri” → <b>Run workflow</b> → Run. Se GitHub lo chiede, prima abilita i workflow. Servono circa 5–15 minuti: aspetta la ✓ verde.',
+    'Verifica: il file <code>data/books-index.json</code> nel repository ora è grande. Nell\'app: ⋯ → 🩺 Verifica servizi → la riga “Indice offline” mostra quanti libri ci sono (se vedi 0, chiudi e riapri l\'app due volte).',
+    'Fatto. Da ora gira da solo il <b>1° di ogni mese</b>: aggiunge le uscite recenti, scava ancora qualche anno nel passato e aggiorna l\'app installata. Non devi più rifarlo.'];
+  const tips = en ? 'If one day it stops: GitHub pauses scheduled workflows after about 60 days with no activity in the repository. Just open Actions and press “Enable” or “Run workflow”. No keys or accounts are needed anywhere.'
+    : 'Se un giorno si ferma: GitHub sospende i workflow programmati dopo circa 60 giorni senza attività nel repository. Basta aprire Actions e premere “Enable” o “Run workflow”. Non servono chiavi né account da nessuna parte.';
+  $('idxBody').innerHTML = `<p class="sub"><b>${esc(state)}</b></p><ol style="padding-left:20px;line-height:1.55">${steps.map(x=>`<li style="margin-bottom:8px">${x}</li>`).join('')}</ol>`
+    + `<div class="acts"><button class="btn" id="idxCopy">${en ? '📋 Copy workflow' : '📋 Copia il workflow'}</button></div>`
+    + `<pre style="white-space:pre-wrap;font-size:12px;background:rgba(127,127,127,.12);padding:10px;border-radius:8px;overflow:auto">${esc(WF_YAML)}</pre><p class="note">${esc(tips)}</p>`;
+}
+$('tIdx').addEventListener('click', ()=>{ closeOv('toolsOv'); renderIdxGuide(); openOv('idxOv'); });
+$('idxOv').addEventListener('click', async e=>{ if(e.target.closest('#idxCopy')){ try{ await navigator.clipboard.writeText(WF_YAML); toast(t('copied')); }catch(err){ toast(LANG === 'en' ? 'Select the text and copy it by hand' : 'Seleziona il testo e copialo a mano'); } } });
+
 /* ---------- Avvio ---------- */
 async function init(){
   applyI18n();
@@ -1272,7 +1332,12 @@ async function init(){
   setView(VIEW);
   try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
   try{ const lb = parseInt(localStorage.getItem('mpmlb_lastBackup') || '0', 10); if(books.length >= 5 && Date.now() - lb > 30 * 864e5) setTimeout(()=>toast(t('backupNudge')), 2500); }catch(e){}
-  if('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
+  loadIdx();
+  if('serviceWorker' in navigator && location.protocol === 'https:'){
+    const had = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', ()=>{ if(had) toast(LANG === 'en' ? '🔄 App updated: the new version is active' : '🔄 App aggiornata: è attiva la nuova versione'); });
+    navigator.serviceWorker.register('sw.js').then(r=>{ r.update().catch(()=>{}); document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) r.update().catch(()=>{}); }); }).catch(()=>{});
+  }
   window.__ready = true;
 }
 init();

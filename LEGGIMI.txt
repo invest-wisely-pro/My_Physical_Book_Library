@@ -40,4 +40,5 @@ MY PHYSICAL BOOK LIBRARY — come pubblicarla e installarla
 BUONO A SAPERSI
   - Dati: Google Books e Open Library (gratis, senza chiavi). Per i libri italiani meno noti qualche
     dato o copertina può mancare: puoi completarli a mano.
+  - Aggiornamenti: il workflow \"Aggiorna indice libri\" (scheda Actions) gira da solo ogni mese e aggiorna l’indice offline di ISBN, titoli e autori; l’app si aggiorna da sola.
   - Le copertine già viste restano disponibili anche offline. L'app chiede ai motori di ricerca di non indicizzarla.
