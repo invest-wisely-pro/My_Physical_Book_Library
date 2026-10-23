@@ -1,6 +1,6 @@
 /* My Physical Book Library — service worker
    App: rete prima, copia salvata se offline. Copertine (Open Library, Google Books): conservate dopo la prima visione. */
-const VERSION = 'mpmlb-2026-10-2';
+const VERSION = 'mpmlb-2026-10-23';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSION && k !== 'covers' && k !== 'data').map(k => caches.delete(k)))).then(() => self.clients.claim())); });
