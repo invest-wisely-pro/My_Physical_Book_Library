@@ -1,0 +1,43 @@
+MY PHYSICAL BOOK LIBRARY — come pubblicarla e installarla
+=========================================================
+
+1. PUBBLICALA SU GITHUB PAGES (gratis, una volta sola)
+  a. Su github.com crea un NUOVO repository pubblico, separato da film e musica (nome neutro, es. "libri").
+  b. "Add file" → "Upload files" → trascina TUTTI i file di questo pacchetto
+     (index.html, sw.js, manifest.webmanifest, la cartella icons) → "Commit changes".
+  c. Settings → Pages → Branch: main, cartella / (root) → Save.
+  d. Dopo 1-2 minuti l'app è su: https://TUONOME.github.io/libri/
+
+2. INSTALLALA
+  - Nell'app trovi il riquadro "📲 Installa la Book Library" in cima alla Libreria (e "📲 Installa app" in ⋯).
+  - Android (Chrome): oppure menu ⋮ → "Installa app".
+  - iPhone (Safari): Condividi → "Aggiungi alla schermata Home".
+
+3. COME SI USA
+  - "＋ Aggiungi": scrivi l'ISBN (le cifre sotto il codice a barre) e premi "Trova il libro": arrivano
+    editore, collana, pagine, formato, traduttore, prima pubblicazione, trama, copertina.
+    Oppure cerca per titolo e autore e scegli l'edizione giusta.
+  - 📷 Scansiona: inquadra il codice a barre sul retro (Chrome su Android). Su iPhone scrivi l'ISBN.
+  - Lettura: "Sto leggendo" (con la pagina a cui sei), "Da leggere", "Letto"; le date si compilano da sole.
+    Nella scheda Lettura imposti l'obiettivo dell'anno.
+  - Lo stato del libro segue la scala dei librai (Come nuovo, Ottimo, Molto buono, Buono, Discreto, Scadente).
+
+  - Persone: autori, traduttori e illustratori della tua libreria, con foto e biografia (Wikidata,
+    Wikipedia). Per gli autori: "⭐ Le opere più note" e tutte le opere, con ✓ e "+ Wishlist".
+  - Nella scheda di un libro: "✨ Curiosità" (premi, ambientazione, personaggi, adattamenti) e
+    "📚 Altre edizioni di quest'opera" (con "È la mia" se hai scelto l'edizione sbagliata).
+  - Lettura: "🎲 Cosa leggo dopo?" pesca dalla pila dei libri da leggere.
+  - Copertine / Dorsi: lo scaffale si può vedere anche di costa, come una libreria vera.
+  - ⋯ → "🩺 Verifica servizi": prova le fonti dal tuo dispositivo; "📋 Copia il rapporto" e mandamelo.
+
+4. I TUOI DATI
+  - Restano sul tuo dispositivo. Fai un backup ogni tanto (⋯ → "Scarica un backup" o "Condividi backup").
+  - L'app conserva da sola le ultime 5 versioni della libreria (⋯ → "🛟 Copie di sicurezza"), e dopo
+    un'eliminazione compare "Annulla".
+  - Su iPhone l'app installata ha una memoria separata da Safari: dentro l'app usa "Ripristina un backup".
+  - Non caricare MAI il file di backup su GitHub.
+
+BUONO A SAPERSI
+  - Dati: Google Books e Open Library (gratis, senza chiavi). Per i libri italiani meno noti qualche
+    dato o copertina può mancare: puoi completarli a mano.
+  - Le copertine già viste restano disponibili anche offline. L'app chiede ai motori di ricerca di non indicizzarla.
