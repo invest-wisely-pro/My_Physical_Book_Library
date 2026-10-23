@@ -1,0 +1,17 @@
+name: Aggiorna indice libri
+on:
+  schedule: [{ cron: '17 4 1 * *' }]
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node scripts/build-index.mjs
+      - run: |
+          git config user.name "indice-bot"; git config user.email "actions@users.noreply.github.com"
+          git add -A; git diff --cached --quiet || (git commit -m "Indice libri aggiornato" && git push)
