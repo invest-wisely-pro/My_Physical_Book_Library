@@ -25,7 +25,7 @@ window.addEventListener('unhandledrejection', e => { try{ window.__errs.push(Str
   --serif:'Literata', Georgia, 'Times New Roman', serif;
   --text:'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color-scheme: dark; box-sizing:border-box;
-  padding-top:env(safe-area-inset-top, 0px); padding-bottom:env(safe-area-inset-bottom, 0px);
+  padding-bottom:env(safe-area-inset-bottom, 0px);
 }
 *,*::before,*::after{box-sizing:inherit;}
 html{scroll-padding-top:env(safe-area-inset-top, 0px);}
@@ -35,7 +35,7 @@ a{color:var(--teal);}
 :focus-visible{outline:2px solid var(--gold2); outline-offset:2px;}
 @media (prefers-reduced-motion: reduce){ *{animation:none !important; transition:none !important;} }
 
-.top{position:sticky; top:0; z-index:40; background:rgba(23,38,31,.95); backdrop-filter:blur(8px); border-bottom:1px solid var(--line);}
+.top{position:sticky; top:0; z-index:40; background:rgba(23,38,31,.95); backdrop-filter:blur(8px); border-bottom:1px solid var(--line); padding-top:env(safe-area-inset-top, 0px);}
 .top-in{max-width:1200px; margin:0 auto; padding:12px 18px; display:flex; align-items:center; gap:14px;}
 .mark{display:flex; align-items:center; gap:12px; min-width:0; flex:1;}
 .mark-book{flex:0 0 30px; height:38px; border-radius:2px 4px 4px 2px; background:linear-gradient(90deg, #6d2a24 0 18%, var(--ribbon) 18% 100%); position:relative; box-shadow:3px 3px 0 -1px var(--pages);}
@@ -198,6 +198,29 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
 .sp-rib{position:absolute; top:-2px; right:22%; width:7px; height:34%; background:var(--ribbon); clip-path:polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%);}
 .sp:hover, .sp:focus-visible{transform:translateY(-6px); transition:transform .15s;}
 
+/* ---------- Telefono: intestazione compatta e fissa, ricerca sempre a portata ---------- */
+.bar-main{display:contents;} .filters{display:contents;} .filt-btn{display:none;}
+.fcount{min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--gold); color:#1b160a; font-size:11.5px; line-height:18px; text-align:center;}
+@media (max-width:640px){
+  .top{backdrop-filter:none; -webkit-backdrop-filter:none; background:var(--leather);}   /* il filtro sfocato spostava la barra delle schede dentro l'intestazione */
+  .top-in{padding:8px 12px; gap:8px;}
+  .mark{gap:9px;} .mark-book{flex-basis:22px; height:30px;} .mark small{display:none;}
+  .mark h1{font-size:17px;}
+  .top-actions{gap:6px;} .ibtn{height:40px; min-width:40px; padding:0 11px;}
+  main{padding:10px 14px 40px;}
+  #v-shelf .bar, #v-people .bar{position:sticky; top:calc(var(--hdr-h, 56px) - 1px); z-index:35; margin:0 -14px 12px; padding:8px 14px 10px; background:var(--leather); border-bottom:1px solid var(--line); flex-wrap:nowrap; flex-direction:column; gap:8px;}
+  #v-shelf .bar-main{display:flex; gap:8px; width:100%;} #v-shelf .bar-main input[type=search]{flex:1 1 auto;}
+  .filt-btn{display:inline-flex; flex:0 0 auto; height:42px; border-radius:21px;}
+  #v-shelf .filters{display:none; width:100%; grid-template-columns:1fr 1fr; gap:8px; max-height:44vh; overflow-y:auto; overscroll-behavior:contain; padding-bottom:2px;}
+  #v-shelf .bar.open .filters{display:grid;}
+  #v-shelf .filters select{width:100%; min-width:0;} #v-shelf .filters .seg{grid-column:1 / -1; justify-self:start;}
+  #v-people .bar input[type=search]{flex:1 1 auto; width:100%;}
+  .count{margin:0 0 12px;}
+}
+@media (max-width:400px){
+  .lbl{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;}   /* solo l'icona ＋; il nome resta per gli screen reader */
+  #addBtn{padding:0; width:40px;}
+}
 /* ---------- Ebook ---------- */
 .ditem .dacts{flex-wrap:wrap; justify-content:flex-end;}
 .sheet.rdr{max-width:780px; height:calc(100dvh - 36px); display:flex; flex-direction:column; padding:18px;}
@@ -212,7 +235,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
     <div class="mark"><div class="mark-book" aria-hidden="true"></div><div style="min-width:0"><h1>My Physical Book Library</h1><small data-i18n="tagline">I tuoi libri, edizione per edizione</small></div></div>
     <div class="top-actions">
       <button class="ibtn" id="scanBtn" data-i18n-title="scanTitle" title="Scansiona il codice ISBN" aria-label="Scansiona">📷</button>
-      <button class="ibtn primary" id="addBtn"><span aria-hidden="true">＋</span><span data-i18n="add">Aggiungi</span></button>
+      <button class="ibtn primary" id="addBtn"><span aria-hidden="true">＋</span><span class="lbl" data-i18n="add">Aggiungi</span></button>
       <button class="ibtn" id="toolsBtn" data-i18n-title="tools" title="Strumenti" aria-label="Strumenti">⋯</button>
     </div>
   </div>
@@ -226,14 +249,19 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
 
 <main>
   <section class="view on" id="v-shelf">
-    <div class="bar">
+    <div class="bar" id="shelfBar">
+      <div class="bar-main">
       <input type="search" id="q" data-i18n-ph="searchPh" data-i18n-aria="searchPh" placeholder="Cerca titolo, autore, editore, collana, traduttore…" autocomplete="off">
+        <button type="button" class="ibtn filt-btn" id="filtBtn" aria-expanded="false" aria-controls="filters"><span aria-hidden="true">⚙︎</span><span data-i18n="filters">Filtri</span><span class="fcount hidden" id="fCount"></span></button>
+      </div>
+      <div class="filters" id="filters">
       <select id="fFormat" data-i18n-aria="allFormats"></select>
       <select id="fRead" data-i18n-aria="allRead"></select>
       <select id="fList" data-i18n-aria="allLists"></select>
       <select id="fCond" data-i18n-aria="allConds"></select>
       <select id="fSort" data-i18n-aria="sortLabel"></select>
       <div class="seg" id="viewSeg" role="group" data-i18n-aria="viewLabel"><button type="button" data-view="covers" aria-pressed="true" data-i18n="viewCovers">Copertine</button><button type="button" data-view="spines" aria-pressed="false" data-i18n="viewSpines">Dorsi</button></div>
+      </div>
     </div>
     <div class="install-card hidden" id="installCard"><span>📲 <b data-i18n="installCardT">Installa la Book Library sul telefono</b><br><small data-i18n="installCardP">Si apre come un'app, a schermo intero e anche offline.</small></span><span class="install-acts"><button class="btn primary" id="installGo" data-i18n="installGo">Installa</button><button class="btn" id="installNo" data-i18n="installNo">Non ora</button></span></div>
     <div class="count" id="count"></div>
@@ -441,7 +469,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
    Fonti: Google Books (edizioni, trame; senza chiave) e Open Library
    (edizioni, opere, copertine; libera). Tutto resta sul dispositivo.
    ===================================================================== */
-const APP_VERSION = 'books-2026-10-9';
+const APP_VERSION = 'books-2026-10-10';
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r=>setTimeout(r, ms));
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
@@ -452,7 +480,7 @@ const hash = s => { let h = 0; for(const c of String(s || '')) h = (h * 31 + c.c
 let LANG = (()=>{ try{ const s = localStorage.getItem('mpmlb_lang'); if(s === 'it' || s === 'en') return s; }catch(e){} return /^it/i.test(navigator.language || 'it') ? 'it' : 'en'; })();
 const LOCALE = () => LANG === 'en' ? 'en-GB' : 'it-IT';
 const I18N = {
-  it: { ebTitle:'📖 Ebook', ebHint:'Allega ebook liberi, senza DRM (EPUB, PDF, MOBI…). I file restano solo su questo dispositivo e non sono compresi nel backup.', ebAdd:'＋ Aggiungi un file ebook', ebOpen:'Leggi', ebDown:'Scarica', ebRemove:'Rimuovi', ebMissing:'File non presente su questo dispositivo (i backup non contengono i file).', ebDrm:'«{n}» è protetto da DRM: l\'app accetta solo ebook liberi.', ebPdfEnc:'«{n}» è un PDF protetto (password o restrizioni). Aggiungerlo comunque?', ebBadType:'«{n}»: formato non supportato.', ebAdded:'Ebook aggiunto: {n}', ebFilled:'Ebook aggiunto. Compilati dall\'ebook: {f}', ebCover:'copertina', ebErr:'Impossibile salvare il file: spazio esaurito?', ebNoStore:'L\'archivio del dispositivo non è disponibile: non posso conservare gli ebook.', ebWith:'📖 Con ebook', ebBadge:'ebook', ebPart:'Parte {i} di {n}', ebPrev:'← Precedente', ebNext:'Successivo →', ebNoRead:'Questo formato si legge con un\'altra app: scarico il file.', ebBadEpub:'Non riesco ad aprire questo EPUB: scarico il file.',
+  it: { filters:'Filtri', ebTitle:'📖 Ebook', ebHint:'Allega ebook liberi, senza DRM (EPUB, PDF, MOBI…). I file restano solo su questo dispositivo e non sono compresi nel backup.', ebAdd:'＋ Aggiungi un file ebook', ebOpen:'Leggi', ebDown:'Scarica', ebRemove:'Rimuovi', ebMissing:'File non presente su questo dispositivo (i backup non contengono i file).', ebDrm:'«{n}» è protetto da DRM: l\'app accetta solo ebook liberi.', ebPdfEnc:'«{n}» è un PDF protetto (password o restrizioni). Aggiungerlo comunque?', ebBadType:'«{n}»: formato non supportato.', ebAdded:'Ebook aggiunto: {n}', ebFilled:'Ebook aggiunto. Compilati dall\'ebook: {f}', ebCover:'copertina', ebErr:'Impossibile salvare il file: spazio esaurito?', ebNoStore:'L\'archivio del dispositivo non è disponibile: non posso conservare gli ebook.', ebWith:'📖 Con ebook', ebBadge:'ebook', ebPart:'Parte {i} di {n}', ebPrev:'← Precedente', ebNext:'Successivo →', ebNoRead:'Questo formato si legge con un\'altra app: scarico il file.', ebBadEpub:'Non riesco ad aprire questo EPUB: scarico il file.',
     tagline:'I tuoi libri, edizione per edizione', add:'Aggiungi', tools:'Strumenti', scanTitle:'Scansiona il codice ISBN', tabShelf:'Libreria', tabReading:'Lettura', tabStats:'Statistiche',
     searchPh:'Cerca titolo, autore, editore, collana, traduttore…', allFormats:'Tutti i formati', allRead:'Ogni lettura', allLists:'Libreria e wishlist', allConds:'Ogni stato', sortLabel:'Ordinamento',
     sortAuthor:'Ordina per autore', sortTitle:'Ordina per titolo', sortYear:'Ordina per anno', sortAdded:'Aggiunti di recente', listColl:'Libreria', listWish:'Wishlist', none:'—',
@@ -492,7 +520,7 @@ const I18N = {
     tHealth:'🩺 Verifica servizi', hcIntro:'Provo davvero, da questo dispositivo, ogni servizio che l\'app usa.', hcRunning:'Verifica in corso…', hcNet:'Rete', hcOnline:'collegato', hcAnswered:'risponde correttamente',
     hcBlocked:'non raggiungibile: bloccato dal browser o dalla rete', hcTimeout:'tempo scaduto: risponde troppo lentamente', hcHttp:'il servizio risponde con errore {c}', hcCovers:'Copertine', hcStorage:'Archivio sul dispositivo',
     hcPersist:'protetto dalla pulizia automatica', hcOfflineMode:'Funzionamento offline', hcSwOn:'attivo: l\'app si apre anche senza rete', hcSwOff:'non attivo: succede nella versione a file singolo o alla primissima apertura', hcCopy:'📋 Copia il rapporto', hcAgain:'Rifai la verifica', copied:'Copiato' },
-  en: { ebTitle:'📖 Ebooks', ebHint:'Attach free, DRM-free ebooks (EPUB, PDF, MOBI…). Files stay on this device only and are not part of the backup.', ebAdd:'＋ Add an ebook file', ebOpen:'Read', ebDown:'Download', ebRemove:'Remove', ebMissing:'File not on this device (backups do not contain the files).', ebDrm:'“{n}” is DRM-protected: the app only accepts free ebooks.', ebPdfEnc:'“{n}” is a protected PDF (password or restrictions). Add it anyway?', ebBadType:'“{n}”: unsupported format.', ebAdded:'Ebook added: {n}', ebFilled:'Ebook added. Filled from the ebook: {f}', ebCover:'cover', ebErr:'Could not save the file: out of space?', ebNoStore:'Device storage is not available: I cannot keep ebooks.', ebWith:'📖 With ebook', ebBadge:'ebook', ebPart:'Part {i} of {n}', ebPrev:'← Previous', ebNext:'Next →', ebNoRead:'This format opens in another app: downloading the file.', ebBadEpub:'I cannot open this EPUB: downloading the file.',
+  en: { filters:'Filters', ebTitle:'📖 Ebooks', ebHint:'Attach free, DRM-free ebooks (EPUB, PDF, MOBI…). Files stay on this device only and are not part of the backup.', ebAdd:'＋ Add an ebook file', ebOpen:'Read', ebDown:'Download', ebRemove:'Remove', ebMissing:'File not on this device (backups do not contain the files).', ebDrm:'“{n}” is DRM-protected: the app only accepts free ebooks.', ebPdfEnc:'“{n}” is a protected PDF (password or restrictions). Add it anyway?', ebBadType:'“{n}”: unsupported format.', ebAdded:'Ebook added: {n}', ebFilled:'Ebook added. Filled from the ebook: {f}', ebCover:'cover', ebErr:'Could not save the file: out of space?', ebNoStore:'Device storage is not available: I cannot keep ebooks.', ebWith:'📖 With ebook', ebBadge:'ebook', ebPart:'Part {i} of {n}', ebPrev:'← Previous', ebNext:'Next →', ebNoRead:'This format opens in another app: downloading the file.', ebBadEpub:'I cannot open this EPUB: downloading the file.',
     tagline:'Your books, edition by edition', add:'Add', tools:'Tools', scanTitle:'Scan the ISBN barcode', tabShelf:'Library', tabReading:'Reading', tabStats:'Stats',
     searchPh:'Search title, author, publisher, series, translator…', allFormats:'All formats', allRead:'Any reading status', allLists:'Library and wishlist', allConds:'Any condition', sortLabel:'Sort order',
     sortAuthor:'Sort by author', sortTitle:'Sort by title', sortYear:'Sort by year', sortAdded:'Recently added', listColl:'Library', listWish:'Wishlist', none:'—',
@@ -823,7 +851,7 @@ function renderGrid(){
     if('IntersectionObserver' in window){ if(_io) _io.disconnect(); _io = new IntersectionObserver(en=>{ if(en.some(x=>x.isIntersecting)){ _io.disconnect(); _shown += PAGE; renderGrid(); } }, { rootMargin: '600px' }); _io.observe($('moreBtn')); }
   }
 }
-function renderAll(){ fillSelects(); renderGrid(); if($('v-reading').classList.contains('on')) renderReading(); if($('v-people').classList.contains('on')) renderPeople(); if($('v-stats').classList.contains('on')) renderStats(); }
+function renderAll(){ fillSelects(); if(window.updFilt) updFilt(); renderGrid(); if($('v-reading').classList.contains('on')) renderReading(); if($('v-people').classList.contains('on')) renderPeople(); if($('v-stats').classList.contains('on')) renderStats(); }
 $('grid').addEventListener('click', e=>{
   if(e.target.closest('#moreBtn')){ _shown += PAGE; renderGrid(); return; }
   const act = e.target.closest('[data-act]'); if(act){ act.dataset.act === 'scan' ? openScanner() : openBook(null); return; }
@@ -1699,6 +1727,17 @@ $('ebNext').addEventListener('click', ()=>{ if(RD) rdShow(RD.i + 1, 0); });
 function rdFont(d){ if(!RD) return; const y = rdY(); RD.fs = Math.max(70, Math.min(220, RD.fs + d)); try{ localStorage.setItem('mpmlb_rdfs', String(RD.fs)); }catch(e){} rdShow(RD.i, y); }
 $('ebFm').addEventListener('click', ()=>rdFont(-10)); $('ebFp').addEventListener('click', ()=>rdFont(10));
 document.addEventListener('visibilitychange', ()=>{ if(document.hidden) rdSavePos(); });
+
+/* ---------- Telefono: intestazione fissa, filtri ripiegabili ---------- */
+(function(){
+  const hdr = document.querySelector('.top'), root = document.documentElement;
+  const setH = () => root.style.setProperty('--hdr-h', Math.round(hdr.getBoundingClientRect().height) + 'px');
+  setH(); if('ResizeObserver' in window) new ResizeObserver(setH).observe(hdr); else addEventListener('resize', setH);
+  const bar = $('shelfBar'), btn = $('filtBtn');
+  btn.addEventListener('click', ()=>{ const o = bar.classList.toggle('open'); btn.setAttribute('aria-expanded', String(o)); });
+  window.updFilt = () => { const n = ['fFormat', 'fRead', 'fList', 'fCond'].filter(id=>$(id).value).length, c = $('fCount'); c.textContent = n; c.classList.toggle('hidden', !n); };
+  ['fFormat', 'fRead', 'fList', 'fCond'].forEach(id=>$(id).addEventListener('change', window.updFilt));
+})();
 
 /* ---------- Avvio ---------- */
 async function init(){
