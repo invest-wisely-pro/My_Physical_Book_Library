@@ -78,7 +78,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
 .cover{position:absolute; inset:0; border-radius:2px 3px 3px 2px; overflow:hidden; background:var(--forest2); box-shadow:inset 4px 0 0 rgba(0,0,0,.18), 0 1px 0 rgba(255,255,255,.04);}
 .cover img{position:absolute; inset:0; z-index:1; width:100%; height:100%; object-fit:cover; display:block;}
 .cover .ph{position:absolute; inset:0; padding:14% 12%; display:flex; flex-direction:column; justify-content:space-between; background:var(--phbg, #2b4436); font-family:var(--serif); color:var(--paper);}
-.cover .ph b{font-size:clamp(13px, 1.8vw, 16px); line-height:1.15; font-weight:800; word-break:break-word;}
+.cover .ph b{font-size:clamp(13px, 1.8vw, 16px); line-height:1.15; font-weight:800; overflow-wrap:break-word; word-break:normal; hyphens:auto;}
 .cover .ph span{font-size:11.5px; color:var(--gold2);}
 .ribbon{position:absolute; top:-6px; right:18%; width:12px; height:30%; z-index:2; background:var(--ribbon); clip-path:polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%); box-shadow:0 0 0 1px rgba(0,0,0,.2);}
 .bk-t{margin-top:4px; font-family:var(--serif); font-weight:700; font-size:15px; line-height:1.2; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
@@ -419,7 +419,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
    Fonti: Google Books (edizioni, trame; senza chiave) e Open Library
    (edizioni, opere, copertine; libera). Tutto resta sul dispositivo.
    ===================================================================== */
-const APP_VERSION = 'books-2026-10-6';
+const APP_VERSION = 'books-2026-10-7';
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r=>setTimeout(r, ms));
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
@@ -732,6 +732,7 @@ function fillSelects(){
   opts($('fList'), [['', t('allLists')], ['collezione', t('listColl')], ['wishlist', t('listWish')]], true);
   opts($('fCond'), [['', t('allConds')], ...CONDS.map(c=>[c[0], condLabel(c[0])])], true);
   opts($('fSort'), [['author', t('sortAuthor')], ['title', t('sortTitle')], ['year', t('sortYear')], ['added', t('sortAdded')]], true);
+  if(!$('fSort').value) $('fSort').value = 'author';
   opts($('fFormato'), [['', t('none')], ...FORMATS.map(f=>[f, t('fmt_' + f)])], true);
   opts($('fLettura'), [['', t('none')], ...READS.map(r=>[r, t('rd_' + r)])], true);
   opts($('fStato'), [['', t('none')], ...CONDS.map(c=>[c[0], condLabel(c[0])])], true);
@@ -766,7 +767,7 @@ function filtered(){
   return list;
 }
 function coverHTML(b, big){
-  return `<span class="cover">${b.copertina ? `<img src="${esc(b.copertina)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}<span class="ph" style="--phbg:hsl(${hash(b.titolo) % 360} 26% 24%)"><b>${esc(b.titolo || '—')}</b><span>${esc(String(b.autori || '').split(',')[0])}</span></span></span>`;
+  return `<span class="cover">${b.copertina ? `<img src="${esc(b.copertina)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}<span class="ph" style="--phbg:hsl(${hash(b.titolo) % 360} 26% 24%)"><b style="font-size:${Math.max(10, Math.min(16, Math.floor(100 / (Math.max(...String(b.titolo || '—').split(/\s+/).map(w=>w.length)) * 0.62))))}px">${esc(b.titolo || '—')}</b><span>${esc(String(b.autori || '').split(',')[0])}</span></span></span>`;
 }
 const PAGE = 120; let _shown = PAGE, _io = null;
 function renderGrid(){
