@@ -4,5 +4,5 @@ A private, offline-first web app for physical book collectors: exact editions by
 
 ## Auto-update
 - `index.html` / `sw.js`: network-first; the service worker checks for updates at every open/return to the app.
-- `.github/workflows/update-index.yml` runs monthly (and on demand) and rebuilds `data/books-index.json` (ISBN, title, authors of recent and past books, Italian + English, cumulative) with `scripts/build-index.mjs`; it also bumps the service-worker version so installed apps update.
 - No API keys anywhere. First-time setup of the workflow is explained in the app: ⋯ → “Indice offline: guida”.
+- `.github/workflows/site.yml` (Pages source = GitHub Actions): monthly rebuilds the index from Open Library's dumps with `scripts/build-dump.mjs` (ISBN of the whole world in 512 small files + Italian search index) and publishes the site; every push to main also republishes. Index stored on branch `data-store` (history never grows).
