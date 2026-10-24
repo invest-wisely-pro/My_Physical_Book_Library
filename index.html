@@ -419,7 +419,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
    Fonti: Google Books (edizioni, trame; senza chiave) e Open Library
    (edizioni, opere, copertine; libera). Tutto resta sul dispositivo.
    ===================================================================== */
-const APP_VERSION = 'books-2026-10-7';
+const APP_VERSION = 'books-2026-10-8';
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r=>setTimeout(r, ms));
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
@@ -569,7 +569,7 @@ async function wdAuthors(name){   // Wikidata: nome → autori in italiano (aiut
 async function gbSearch(o){
   if(Date.now() < _gbCool) throw new Error('http429');
   const q = o.isbn ? 'isbn:' + o.isbn : [o.title ? 'intitle:' + o.title : '', o.author ? 'inauthor:' + o.author : ''].filter(Boolean).join('+');
-  const u = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=20&printType=books${!o.isbn && onlyIt() ? '&langRestrict=it' : ''}`;
+  const u = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(o.isbn ? q : q.replace(/[’'`´]/g, ' '))}&maxResults=20&printType=books${!o.isbn && onlyIt() ? '&langRestrict=it' : ''}`;
   let j; try{ try{ j = await jget(u); }catch(e){ if(!/http429/.test(String(e.message))) throw e; await new Promise(r=>setTimeout(r, 1800)); j = await jget(u); } }
   catch(e){ if(/http429/.test(String(e.message))) _gbCool = Date.now() + 60000; throw e; }
   return ((j && j.items) || []).map(gbItem);
@@ -598,11 +598,18 @@ async function idxSearch(o){   // titolo/autore: edizioni italiane, anche offlin
 const GENRI = {'fiction':'Narrativa','biography & autobiography':'Biografie e autobiografie','history':'Storia','science':'Scienza','juvenile fiction':'Narrativa per ragazzi','juvenile nonfiction':'Saggistica per ragazzi','poetry':'Poesia','philosophy':'Filosofia','religion':'Religione','art':'Arte','cooking':'Cucina','computers':'Informatica','business & economics':'Economia e affari','psychology':'Psicologia','travel':'Viaggi','self-help':'Crescita personale','comics & graphic novels':'Fumetti e graphic novel','fantasy':'Fantasy','science fiction':'Fantascienza','mystery':'Giallo','detective':'Giallo','thrillers':'Thriller','thriller':'Thriller','romance':'Romanzo rosa','drama':'Teatro','literary criticism':'Critica letteraria','literary collections':'Raccolte letterarie','political science':'Scienze politiche','social science':'Scienze sociali','education':'Istruzione','nature':'Natura','medical':'Medicina','health & fitness':'Salute e benessere','law':'Diritto','music':'Musica','sports & recreation':'Sport e tempo libero','humor':'Umorismo','young adult fiction':'Narrativa young adult','family & relationships':'Famiglia e relazioni','language arts & disciplines':'Lingua e linguistica','mathematics':'Matematica','technology & engineering':'Tecnologia e ingegneria','true crime':'Cronaca nera','body, mind & spirit':'Corpo, mente e spirito','house & home':'Casa','gardening':'Giardinaggio','games & activities':'Giochi','photography':'Fotografia','performing arts':'Arti dello spettacolo','architecture':'Architettura','pets':'Animali domestici','reference':'Consultazione','crafts & hobbies':'Hobby e fai da te','foreign language study':'Studio delle lingue','antiques & collectibles':'Antiquariato e collezionismo','transportation':'Trasporti','nonfiction':'Saggistica','general':'Generale'};
 const genIt = g => String(g || '').split(/\s*[,\/]\s*/).map(w=>GENRI[w.trim().toLowerCase()] || w.trim()).filter((w, i, a)=>w && a.indexOf(w) === i).join(', ');
 const OL_FIELDS = 'key,title,subtitle,author_name,first_publish_year,cover_i,edition_count,isbn,language,publisher,number_of_pages_median';
+const STOPW = new Set('e ed il lo la i gli le un uno una di del dello della dei degli delle d l a al da in nel con su per tra fra the of and a an'.split(' '));
+function titleVariants(t){   // "Miss Bee e il principe d'inverno" -> versione pulita, parole chiave, prime 4 parole chiave
+  const clean = String(t || '').replace(/[’'`´]/g, ' ').replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
+  const kw = clean.split(' ').filter(w=>w && !STOPW.has(w.toLowerCase()));
+  return [...new Set([clean, kw.join(' '), kw.slice(0, 4).join(' ')].filter(Boolean))];
+}
 async function olSearch(o){
   const p = o.isbn ? 'isbn=' + o.isbn : [o.title ? 'title=' + encodeURIComponent(o.title) : '', o.author ? 'author=' + encodeURIComponent(o.author) : ''].filter(Boolean).join('&');
   const lg = !o.isbn && onlyIt() ? '&language=ita' : '';
   let j = await jget(`https://openlibrary.org/search.json?${p}${lg}&limit=30&fields=${OL_FIELDS}`);
-  if(!o.isbn && !(j && j.docs && j.docs.length)){ const qq = [o.title, o.author].filter(Boolean).join(' '); j = await jget(`https://openlibrary.org/search.json?q=${encodeURIComponent(qq)}${lg}&limit=30&fields=${OL_FIELDS}`); }
+  if(!o.isbn) for(const tv of titleVariants(o.title || o.author)){ if(j && j.docs && j.docs.length) break;
+    const qq = [tv, o.title ? o.author : ''].filter(Boolean).join(' '); j = await jget(`https://openlibrary.org/search.json?q=${encodeURIComponent(qq)}${lg}&limit=30&fields=${OL_FIELDS}`); }
   return ((j && j.docs) || []).map(d=>({ src: 'ol', work: d.key || '', title: d.title || '', sub: d.subtitle || '', authors: d.author_name || [], firstYear: d.first_publish_year ? String(d.first_publish_year) : '',
     cover: d.cover_i ? `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg` : '', editions: d.edition_count || 0, lang: OL_LANG[(d.language || [])[0]] || '' }));
 }
@@ -888,11 +895,19 @@ async function runFind(){
     _gb = g.status === 'fulfilled' ? g.value : []; if(onlyIt()) _gb = _gb.filter(x=>!x.lang || x.lang === 'it'); _gb = _gb.concat(ix.filter(x=>!_gb.some(y=>y.isbn && y.isbn === x.isbn))); _ol = ol.status === 'fulfilled' ? ol.value : [];
     const row = (x, k, i) => `<button type="button" class="res" data-${k}="${i}">${x.cover ? `<img src="${esc(x.cover)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">` : '<span class="noimg"></span>'}<span style="min-width:0"><b>${esc(x.title)}${x.sub ? ': ' + esc(x.sub) : ''}</b><span>${esc(x.authors.join(', '))}</span><span>${esc(k === 'g' ? [t('resEdition'), x.publisher, x.year, x.isbn, x.pages ? t('pages', { n: x.pages }) : '', x.lang ? langName(x.lang) : ''].filter(Boolean).join(', ') : [t('resWork', { n: x.editions }), x.firstYear].filter(Boolean).join(', '))}</span></span></button>`;
     const arow = (x, i) => `<button type="button" class="res" data-a="${i}"><span class="noimg"></span><span style="min-width:0"><b>👤 ${esc(x.label)}</b><span>${esc(x.desc)}</span></span></button>`;
-    box.innerHTML = (_gb.length || _ol.length || _wa.length) ? _wa.map(arow).join('') + _gb.map((x, i)=>row(x, 'g', i)).join('') + _ol.map((x, i)=>row(x, 'o', i)).join('') : `<div class="note">${t('noResults')}</div>`;
+    box.innerHTML = (_gb.length || _ol.length || _wa.length) ? _wa.map(arow).join('') + _gb.map((x, i)=>row(x, 'g', i)).join('') + _ol.map((x, i)=>row(x, 'o', i)).join('') : noResHtml(o);
   }catch(e){ box.innerHTML = `<div class="note">${t('srcError')}</div>`; }
   finally{ btn.disabled = false; }
 }
 let _wa = [];
+function noResHtml(o){
+  const en = LANG === 'en', q = encodeURIComponent([o.title, o.author].filter(Boolean).join(' ')), a = (u, n)=>`<a href="${u}" target="_blank" rel="noopener">${n}</a>`;
+  return `<div class="note">${en ? 'Not found in the free catalogs (recent Italian titles are often missing).' : 'Non trovato nei cataloghi gratuiti (i titoli italiani recenti spesso mancano).'}
+    <div class="acts" style="margin:8px 0"><button class="btn" id="manFill" type="button">${en ? '✍️ Fill in by hand with this title' : '✍️ Compila a mano con questo titolo'}</button></div>
+    ${en ? 'Find the ISBN (back cover or barcode) and type it above: the other fields then fill in by themselves if any source has it. Or look it up on:' : 'Trova l\'ISBN (retro di copertina o codice a barre) e scrivilo qui sopra: se una fonte lo ha, il resto si compila da solo. Oppure cercalo su:'}
+    ${a('https://www.ibs.it/search?ts=as&query=' + q, 'IBS')} · ${a('https://www.google.com/search?tbm=bks&q=' + q, 'Google Libri')} · ${a('https://www.goodreads.com/search?q=' + q, 'Goodreads')} · ${a('https://opac.sbn.it/', 'OPAC SBN')}</div>`;
+}
+document.addEventListener('click', e=>{ if(e.target.closest('#manFill')){ readForm(cur); const o = { title: $('sTitle').value.trim(), author: $('sAuthor').value.trim() }; if(o.title && !cur.titolo) cur.titolo = o.title; if(o.author && !cur.autori) cur.autori = o.author; fillForm(); const f = $('fTitolo'); if(f) f.focus(); } });
 $('plotTr').hidden = !('Translator' in self);
 $('plotTr').addEventListener('click', async ()=>{   // traduzione sul dispositivo (Chrome/Edge desktop), nessuna chiave
   const txt = cur && cur.trama; if(!txt || /traduzione automatica|machine/i.test(cur.tramaSrc || '')) return;
