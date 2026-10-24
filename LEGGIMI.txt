@@ -30,6 +30,15 @@ MY PHYSICAL BOOK LIBRARY — come pubblicarla e installarla
   - Copertine / Dorsi: lo scaffale si può vedere anche di costa, come una libreria vera.
   - ⋯ → "🩺 Verifica servizi": prova le fonti dal tuo dispositivo; "📋 Copia il rapporto" e mandamelo.
 
+  - Ebook liberi (senza DRM): nella scheda di un libro, sezione "📖 Ebook" → "Aggiungi un file ebook".
+    Formati: EPUB, PDF, MOBI, AZW3, FB2, CBZ, DJVU, TXT, RTF. Da un EPUB l'app compila da sola i campi vuoti
+    (titolo, autori, editore, ISBN, lingua, trama, copertina). Gli EPUB si leggono dentro l'app ("Leggi":
+    capitoli, dimensione del testo, riprende da dove eri); i PDF si aprono nel visualizzatore del browser;
+    gli altri formati si scaricano per aprirli con un'altra app. I file con DRM (Adobe, Apple, Kobo, Kindle)
+    vengono rifiutati. Filtro "📖 Con ebook" nella Libreria.
+  - I file ebook restano SOLO sul tuo dispositivo (archivio del browser): NON sono nel backup .json e non vanno
+    mai caricati su GitHub. Per spostarli su un altro dispositivo usa "Scarica" dalla scheda del libro.
+
 4. I TUOI DATI
   - Restano sul tuo dispositivo. Fai un backup ogni tanto (⋯ → "Scarica un backup" o "Condividi backup").
   - L'app conserva da sola le ultime 5 versioni della libreria (⋯ → "🛟 Copie di sicurezza"), e dopo

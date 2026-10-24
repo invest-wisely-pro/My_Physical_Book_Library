@@ -197,6 +197,13 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
 .sp-a{writing-mode:vertical-rl; transform:rotate(180deg); font-size:10px; color:var(--gold2); white-space:nowrap; max-height:40px; overflow:hidden;}
 .sp-rib{position:absolute; top:-2px; right:22%; width:7px; height:34%; background:var(--ribbon); clip-path:polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%);}
 .sp:hover, .sp:focus-visible{transform:translateY(-6px); transition:transform .15s;}
+
+/* ---------- Ebook ---------- */
+.ditem .dacts{flex-wrap:wrap; justify-content:flex-end;}
+.sheet.rdr{max-width:780px; height:calc(100dvh - 36px); display:flex; flex-direction:column; padding:18px;}
+.rdr-bar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:10px 0;}
+.rdr-bar .btn{height:36px; padding:0 14px;} .rdr-bar .note{flex:1 1 auto; text-align:center;}
+#ebFrame{flex:1 1 auto; min-height:0; width:100%; border:0; border-radius:10px; background:#EDE6D3;}
 </style>
 </head>
 <body>
@@ -319,6 +326,12 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
       <div class="links" id="bLinks"></div>
       <div class="f" style="margin-top:12px"><label for="fNote" data-i18n="fNotes">Note</label><textarea id="fNote"></textarea></div>
     </div>
+    <div class="sec" id="ebookSec"><h3 data-i18n="ebTitle">📖 Ebook</h3>
+      <p class="note" data-i18n="ebHint">Allega ebook liberi, senza DRM (EPUB, PDF, MOBI…). I file restano solo su questo dispositivo e non sono compresi nel backup.</p>
+      <div id="ebList"></div>
+      <div class="acts" style="margin-top:8px"><button class="btn" id="ebAdd" type="button" data-i18n="ebAdd">＋ Aggiungi un file ebook</button></div>
+      <input type="file" id="ebFile" class="hidden" multiple accept=".epub,.pdf,.mobi,.azw3,.azw,.prc,.fb2,.cbz,.djvu,.txt,.rtf,application/epub+zip,application/pdf">
+    </div>
     <div class="sec hidden" id="curioSec"><h3 data-i18n="curioTitle">✨ Curiosità</h3><dl class="facts" id="aCurio"></dl></div>
     <div class="sec hidden" id="edsSec"><h3 data-i18n="edsTitle">📚 Altre edizioni di quest'opera</h3><button class="btn" id="edsBtn" data-i18n="edsBtn">Mostra le edizioni</button><div id="edsList"></div></div>
     <div class="sec hidden" id="plotSec"><h3 data-i18n="secPlot">Trama</h3><p class="plot" id="bPlot"></p><p class="note" id="bPlotSrc"></p><button class="btn" id="plotTr" type="button" style="margin-top:8px">🌐 Traduci in italiano</button></div>
@@ -326,6 +339,15 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
       <button class="btn warn" id="delBtn" data-i18n="delete">Elimina</button>
       <div style="display:flex; gap:10px"><button class="btn" data-close data-i18n="close">Chiudi</button><button class="btn primary" id="saveBtn" data-i18n="save">Salva</button></div>
     </div>
+  </div>
+</div>
+
+<div class="ov" id="ebReadOv" role="dialog" aria-modal="true" aria-labelledby="ebRT">
+  <div class="sheet rdr">
+    <button class="x" data-close aria-label="Chiudi">×</button>
+    <h2 id="ebRT"></h2>
+    <div class="rdr-bar"><button class="btn" id="ebPrev" type="button" data-i18n="ebPrev">← Precedente</button><span class="note" id="ebPos"></span><button class="btn" id="ebNext" type="button" data-i18n="ebNext">Successivo →</button><button class="btn" id="ebFm" type="button" aria-label="A−">A−</button><button class="btn" id="ebFp" type="button" aria-label="A+">A+</button></div>
+    <iframe id="ebFrame" sandbox="allow-same-origin" title="Ebook"></iframe>
   </div>
 </div>
 
@@ -419,7 +441,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
    Fonti: Google Books (edizioni, trame; senza chiave) e Open Library
    (edizioni, opere, copertine; libera). Tutto resta sul dispositivo.
    ===================================================================== */
-const APP_VERSION = 'books-2026-10-8';
+const APP_VERSION = 'books-2026-10-9';
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r=>setTimeout(r, ms));
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
@@ -430,7 +452,8 @@ const hash = s => { let h = 0; for(const c of String(s || '')) h = (h * 31 + c.c
 let LANG = (()=>{ try{ const s = localStorage.getItem('mpmlb_lang'); if(s === 'it' || s === 'en') return s; }catch(e){} return /^it/i.test(navigator.language || 'it') ? 'it' : 'en'; })();
 const LOCALE = () => LANG === 'en' ? 'en-GB' : 'it-IT';
 const I18N = {
-  it: { tagline:'I tuoi libri, edizione per edizione', add:'Aggiungi', tools:'Strumenti', scanTitle:'Scansiona il codice ISBN', tabShelf:'Libreria', tabReading:'Lettura', tabStats:'Statistiche',
+  it: { ebTitle:'📖 Ebook', ebHint:'Allega ebook liberi, senza DRM (EPUB, PDF, MOBI…). I file restano solo su questo dispositivo e non sono compresi nel backup.', ebAdd:'＋ Aggiungi un file ebook', ebOpen:'Leggi', ebDown:'Scarica', ebRemove:'Rimuovi', ebMissing:'File non presente su questo dispositivo (i backup non contengono i file).', ebDrm:'«{n}» è protetto da DRM: l\'app accetta solo ebook liberi.', ebPdfEnc:'«{n}» è un PDF protetto (password o restrizioni). Aggiungerlo comunque?', ebBadType:'«{n}»: formato non supportato.', ebAdded:'Ebook aggiunto: {n}', ebFilled:'Ebook aggiunto. Compilati dall\'ebook: {f}', ebCover:'copertina', ebErr:'Impossibile salvare il file: spazio esaurito?', ebNoStore:'L\'archivio del dispositivo non è disponibile: non posso conservare gli ebook.', ebWith:'📖 Con ebook', ebBadge:'ebook', ebPart:'Parte {i} di {n}', ebPrev:'← Precedente', ebNext:'Successivo →', ebNoRead:'Questo formato si legge con un\'altra app: scarico il file.', ebBadEpub:'Non riesco ad aprire questo EPUB: scarico il file.',
+    tagline:'I tuoi libri, edizione per edizione', add:'Aggiungi', tools:'Strumenti', scanTitle:'Scansiona il codice ISBN', tabShelf:'Libreria', tabReading:'Lettura', tabStats:'Statistiche',
     searchPh:'Cerca titolo, autore, editore, collana, traduttore…', allFormats:'Tutti i formati', allRead:'Ogni lettura', allLists:'Libreria e wishlist', allConds:'Ogni stato', sortLabel:'Ordinamento',
     sortAuthor:'Ordina per autore', sortTitle:'Ordina per titolo', sortYear:'Ordina per anno', sortAdded:'Aggiunti di recente', listColl:'Libreria', listWish:'Wishlist', none:'—',
     fTitle:'Titolo', fAuthor:'Autore', findBtn:'Trova il libro', secBook:'Il libro', fSubtitle:'Sottotitolo', fAuthors:'Autori', fOrigYear:'Prima pubblicazione', fOrigTitle:'Titolo originale', fGenre:'Genere',
@@ -469,7 +492,8 @@ const I18N = {
     tHealth:'🩺 Verifica servizi', hcIntro:'Provo davvero, da questo dispositivo, ogni servizio che l\'app usa.', hcRunning:'Verifica in corso…', hcNet:'Rete', hcOnline:'collegato', hcAnswered:'risponde correttamente',
     hcBlocked:'non raggiungibile: bloccato dal browser o dalla rete', hcTimeout:'tempo scaduto: risponde troppo lentamente', hcHttp:'il servizio risponde con errore {c}', hcCovers:'Copertine', hcStorage:'Archivio sul dispositivo',
     hcPersist:'protetto dalla pulizia automatica', hcOfflineMode:'Funzionamento offline', hcSwOn:'attivo: l\'app si apre anche senza rete', hcSwOff:'non attivo: succede nella versione a file singolo o alla primissima apertura', hcCopy:'📋 Copia il rapporto', hcAgain:'Rifai la verifica', copied:'Copiato' },
-  en: { tagline:'Your books, edition by edition', add:'Add', tools:'Tools', scanTitle:'Scan the ISBN barcode', tabShelf:'Library', tabReading:'Reading', tabStats:'Stats',
+  en: { ebTitle:'📖 Ebooks', ebHint:'Attach free, DRM-free ebooks (EPUB, PDF, MOBI…). Files stay on this device only and are not part of the backup.', ebAdd:'＋ Add an ebook file', ebOpen:'Read', ebDown:'Download', ebRemove:'Remove', ebMissing:'File not on this device (backups do not contain the files).', ebDrm:'“{n}” is DRM-protected: the app only accepts free ebooks.', ebPdfEnc:'“{n}” is a protected PDF (password or restrictions). Add it anyway?', ebBadType:'“{n}”: unsupported format.', ebAdded:'Ebook added: {n}', ebFilled:'Ebook added. Filled from the ebook: {f}', ebCover:'cover', ebErr:'Could not save the file: out of space?', ebNoStore:'Device storage is not available: I cannot keep ebooks.', ebWith:'📖 With ebook', ebBadge:'ebook', ebPart:'Part {i} of {n}', ebPrev:'← Previous', ebNext:'Next →', ebNoRead:'This format opens in another app: downloading the file.', ebBadEpub:'I cannot open this EPUB: downloading the file.',
+    tagline:'Your books, edition by edition', add:'Add', tools:'Tools', scanTitle:'Scan the ISBN barcode', tabShelf:'Library', tabReading:'Reading', tabStats:'Stats',
     searchPh:'Search title, author, publisher, series, translator…', allFormats:'All formats', allRead:'Any reading status', allLists:'Library and wishlist', allConds:'Any condition', sortLabel:'Sort order',
     sortAuthor:'Sort by author', sortTitle:'Sort by title', sortYear:'Sort by year', sortAdded:'Recently added', listColl:'Library', listWish:'Wishlist', none:'—',
     fTitle:'Title', fAuthor:'Author', findBtn:'Find the book', secBook:'The book', fSubtitle:'Subtitle', fAuthors:'Authors', fOrigYear:'First published', fOrigTitle:'Original title', fGenre:'Genre',
@@ -536,7 +560,7 @@ let _db = null, STORAGE_KIND = 'IndexedDB';
 function idb(){
   if(_db) return _db;
   _db = new Promise(res=>{ try{ if(typeof indexedDB === 'undefined' || !indexedDB){ STORAGE_KIND = 'localStorage'; return res(null); }
-    const r = indexedDB.open('mpml_books', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => { STORAGE_KIND = 'localStorage'; res(null); };
+    const r = indexedDB.open('mpml_books', 2); r.onupgradeneeded = () => { const d = r.result; if(!d.objectStoreNames.contains('kv')) d.createObjectStore('kv'); if(!d.objectStoreNames.contains('files')) d.createObjectStore('files'); }; r.onsuccess = () => res(r.result); r.onerror = () => { STORAGE_KIND = 'localStorage'; res(null); };
   }catch(e){ STORAGE_KIND = 'localStorage'; res(null); } });
   return _db;
 }
@@ -714,7 +738,7 @@ function openOv(id){
 function closeOv(id){
   const k = _openers.map(o=>o.id).lastIndexOf(id);
   if(k >= 0){ const o = _openers.splice(k, 1)[0]; setTimeout(()=>{ if(o.el && document.contains(o.el) && !document.querySelector('.ov.open')) try{ o.el.focus(); }catch(e){} }, 0); }
-  $(id).classList.remove('open'); if(id === 'scanOv') stopScan();
+  $(id).classList.remove('open'); if(id === 'scanOv') stopScan(); if(id === 'ebReadOv') rdClose(); if(id === 'bookOv') ebAfterClose();
   if(!document.querySelector('.ov.open')) document.body.style.overflow = '';
 }
 document.querySelectorAll('.ov').forEach(ov=>ov.addEventListener('click', e=>{ if(e.target === ov || e.target.closest('[data-close]')) closeOv(ov.id); }));
@@ -734,7 +758,7 @@ document.addEventListener('keydown', e=>{
 /* ---------- Testi e liste ---------- */
 function opts(sel, list, keep){ const cur = keep ? sel.value : undefined; sel.innerHTML = list.map(([v, l])=>`<option value="${esc(v)}">${esc(l)}</option>`).join(''); if(cur !== undefined) sel.value = cur; }
 function fillSelects(){
-  opts($('fFormat'), [['', t('allFormats')], ...FORMATS.map(f=>[f, t('fmt_' + f)])], true);
+  opts($('fFormat'), [['', t('allFormats')], ...FORMATS.map(f=>[f, t('fmt_' + f)]), ['_ebook', t('ebWith')]], true);
   opts($('fRead'), [['', t('allRead')], ...READS.map(r=>[r, t('rd_' + r)])], true);
   opts($('fList'), [['', t('allLists')], ['collezione', t('listColl')], ['wishlist', t('listWish')]], true);
   opts($('fCond'), [['', t('allConds')], ...CONDS.map(c=>[c[0], condLabel(c[0])])], true);
@@ -763,7 +787,7 @@ const firstAuthor = s => { const a = String(s || '').split(',')[0].trim(); const
 function filtered(){
   const q = norm($('q').value), ff = $('fFormat').value, fr = $('fRead').value, fl = $('fList').value, fc = $('fCond').value;
   const list = books.filter(b=>{
-    if(ff && b.formato !== ff) return false; if(fr && b.lettura !== fr) return false;
+    if(ff === '_ebook'){ if(!(b.ebook && b.ebook.length)) return false; } else if(ff && b.formato !== ff) return false; if(fr && b.lettura !== fr) return false;
     if(fl && (b.lista || 'collezione') !== fl) return false; if(fc && b.stato !== fc) return false;
     if(q){ const hay = norm([b.titolo, b.sottotitolo, b.autori, b.editore, b.collana, b.traduttore, b.illustratore, b.isbn, b.genere, b.titoloOrig].join(' ')); if(!q.split(' ').every(w=>hay.includes(w))) return false; }
     return true;
@@ -788,7 +812,7 @@ function renderGrid(){
   g.classList.toggle('spines', VIEW === 'spines');
   if(VIEW === 'spines') g.innerHTML = shown.map(spineHTML).join(''); else g.innerHTML = shown.map(b=>{
     const pg = parseInt(b.pagine, 10) || 0, cp = parseInt(b.pagina, 10) || 0;
-    const badges = ((b.lista || 'collezione') === 'wishlist' ? `<span class="badge wish">${t('wish')}</span>` : '') + (b.prestatoA ? `<span class="badge lent">${t('lent')}</span>` : '') + (b.firmato ? `<span class="badge">${t('signed')}</span>` : '');
+    const badges = ((b.lista || 'collezione') === 'wishlist' ? `<span class="badge wish">${t('wish')}</span>` : '') + (b.prestatoA ? `<span class="badge lent">${t('lent')}</span>` : '') + (b.firmato ? `<span class="badge">${t('signed')}</span>` : '') + (b.ebook && b.ebook.length ? `<span class="badge">📖 ${t('ebBadge')}</span>` : '');
     const meta = [b.annoOrig || b.anno, b.editore].filter(Boolean).join(', ');
     return `<button class="bk${b.primaEdizione ? ' first' : ''}" data-id="${esc(b.id)}" aria-label="${esc([b.titolo, b.autori, b.annoOrig || b.anno, b.lettura ? t('rd_' + b.lettura) : ''].filter(Boolean).join(', '))}"><span class="book"><span class="pages"></span>${coverHTML(b)}${b.lettura === 'inlettura' ? '<span class="ribbon"></span>' : ''}</span>`
       + `<span class="bk-t">${esc(b.titolo || '—')}</span><span class="bk-a">${esc(b.autori || '')}</span><span class="bk-m">${esc(meta)} ${badges}</span>`
@@ -838,7 +862,7 @@ function fillForm(){
   renderStars(); renderLinks();
   $('edsSec').classList.toggle('hidden', !cur.olWork); _eds = null; $('edsList').innerHTML = '';
   if(cur.olWork) kvGet('ed:' + cur.olWork).then(c=>{ if(c && cur && Date.now() - (c.at || 0) < ED_TTL){ _eds = c; renderEditions(); } });
-  renderCurio();
+  renderCurio(); renderEb();
 }
 function readForm(b){
   Object.entries(FIELDS).forEach(([id, k])=>{ const v = $(id).value.trim(); if(v) b[k] = (k === 'pagine' || k === 'pagina') ? (parseInt(v, 10) || '') : v; else delete b[k]; });
@@ -853,7 +877,7 @@ function readForm(b){
 function openBook(id, preset){
   const b = id ? books.find(x=>x.id === id) : null;
   cur = b ? JSON.parse(JSON.stringify(b)) : Object.assign({ id: uid(), lista: 'collezione', aggiunto: Date.now() }, preset || {});
-  fillForm(); $('results').innerHTML = '';
+  _ebTouched = new Set(); fillForm(); $('results').innerHTML = '';
   $('sTitle').value = cur.titolo || ''; $('sAuthor').value = String(cur.autori || '').split(',')[0] || ''; $('sIsbn').value = cur.isbn || '';
   $('delBtn').classList.toggle('hidden', !b);
   openOv('bookOv'); loadCurio();
@@ -1438,10 +1462,248 @@ function renderIdxGuide(){
 $('tIdx').addEventListener('click', ()=>{ closeOv('toolsOv'); renderIdxGuide(); openOv('idxOv'); });
 $('idxOv').addEventListener('click', async e=>{ if(e.target.closest('#idxCopy')){ try{ await navigator.clipboard.writeText(WF_YAML); toast(t('copied')); }catch(err){ toast(LANG === 'en' ? 'Select the text and copy it by hand' : 'Seleziona il testo e copialo a mano'); } } });
 
+/* ---------- 📖 Ebook liberi (senza DRM): archivio sul dispositivo, controllo DRM, lettore EPUB ---------- */
+/*EB-CORE-START*/
+const EB_EXT = ['epub', 'pdf', 'mobi', 'azw3', 'azw', 'prc', 'fb2', 'cbz', 'djvu', 'txt', 'rtf'];
+const EB_MIME = { pdf: 'application/pdf', txt: 'text/plain; charset=utf-8', epub: 'application/epub+zip' };
+const fmtSize = n => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+const txtDec = u8 => new TextDecoder('utf-8').decode(u8);
+const latin1 = buf => new TextDecoder('latin1').decode(buf);
+const xmlDoc = s => new DOMParser().parseFromString(s, 'application/xml');
+
+/* Lettore ZIP minimale (gli EPUB sono ZIP): legge solo ciò che serve, senza caricare tutto in memoria */
+async function zipOpen(blob){
+  const size = blob.size, tailLen = Math.min(size, 66000);
+  const tail = new DataView(await blob.slice(size - tailLen).arrayBuffer());
+  let p = -1; for(let i = tailLen - 22; i >= 0; i--){ if(tail.getUint32(i, true) === 0x06054b50){ p = i; break; } }
+  if(p < 0) throw new Error('zip');
+  const n = tail.getUint16(p + 10, true), cdSize = tail.getUint32(p + 12, true), cdOff = tail.getUint32(p + 16, true);
+  const cd = new DataView(await blob.slice(cdOff, cdOff + cdSize).arrayBuffer()), dec = new TextDecoder(), map = new Map();
+  let o = 0;
+  for(let k = 0; k < n && o + 46 <= cd.byteLength; k++){
+    if(cd.getUint32(o, true) !== 0x02014b50) break;
+    const method = cd.getUint16(o + 10, true), csize = cd.getUint32(o + 20, true), nl = cd.getUint16(o + 28, true), el = cd.getUint16(o + 30, true), cl = cd.getUint16(o + 32, true), off = cd.getUint32(o + 42, true);
+    const name = dec.decode(new Uint8Array(cd.buffer, cd.byteOffset + o + 46, nl));
+    map.set(name, { name, method, csize, off }); o += 46 + nl + el + cl;
+  }
+  return { blob, map };
+}
+async function zipRead(z, name){
+  const e = z.map.get(name); if(!e) return null;
+  const lh = new DataView(await z.blob.slice(e.off, e.off + 30).arrayBuffer());
+  const start = e.off + 30 + lh.getUint16(26, true) + lh.getUint16(28, true), raw = z.blob.slice(start, start + e.csize);
+  if(e.method === 0) return new Uint8Array(await raw.arrayBuffer());
+  if(e.method === 8){
+    if(typeof DecompressionStream === 'undefined') throw new Error('nods');
+    return new Uint8Array(await new Response(raw.stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
+  }
+  throw new Error('method');
+}
+function resolvePath(base, rel){
+  rel = String(rel || '').split('#')[0].split('?')[0]; try{ rel = decodeURIComponent(rel); }catch(e){}
+  const out = []; (rel.startsWith('/') ? rel.slice(1) : base.replace(/[^/]*$/, '') + rel).split('/').forEach(s=>{ if(s === '..') out.pop(); else if(s && s !== '.') out.push(s); });
+  return out.join('/');
+}
+
+/* DRM: l'app accetta solo ebook liberi. EPUB con DRM (Adobe, Apple, Kobo…) rifiutati; MOBI/AZW con cifratura rifiutati;
+   PDF con /Encrypt: può essere solo una restrizione, quindi si chiede conferma. */
+async function epubDrm(z){
+  if(z.map.has('META-INF/rights.xml') || z.map.has('META-INF/sinf.xml')) return true;
+  let e = null; try{ e = await zipRead(z, 'META-INF/encryption.xml'); }catch(err){}
+  if(!e) return false;
+  const algs = [...txtDec(e).matchAll(/Algorithm\s*=\s*["']([^"']+)["']/g)].map(m=>m[1]);
+  return algs.some(a=>!/idpf\.org\/2008\/embedding|ns\.adobe\.com\/pdf\/enc#RC/.test(a));   // l'offuscamento dei font non è DRM
+}
+async function ebCheck(file, ext){   // -> 'drm' | 'enc' | null
+  try{
+    if(ext === 'epub') return (await epubDrm(await zipOpen(file))) ? 'drm' : null;
+    if(ext === 'pdf'){
+      const re = /\/Encrypt\s*(\d+\s+\d+\s+R|<<)/;
+      return re.test(latin1(await file.slice(0, 65536).arrayBuffer())) || re.test(latin1(await file.slice(Math.max(0, file.size - 1048576)).arrayBuffer())) ? 'enc' : null;
+    }
+    if(['mobi', 'azw', 'azw3', 'prc'].includes(ext)){
+      const h = new DataView(await file.slice(0, 96).arrayBuffer()); if(h.byteLength < 82) return null;
+      const off0 = h.getUint32(78, false), r0 = new DataView(await file.slice(off0, off0 + 16).arrayBuffer());
+      return r0.byteLength >= 14 && r0.getUint16(12, false) !== 0 ? 'drm' : null;
+    }
+  }catch(e){}
+  return null;
+}
+
+/* Struttura e metadati di un EPUB (titolo, autori, copertina, ordine dei capitoli) */
+async function epubParse(blob){
+  const z = await zipOpen(blob), ct = await zipRead(z, 'META-INF/container.xml'); if(!ct) throw new Error('epub');
+  const rf = xmlDoc(txtDec(ct)).getElementsByTagNameNS('*', 'rootfile')[0], opf = rf && rf.getAttribute('full-path'); if(!opf) throw new Error('epub');
+  const od = xmlDoc(txtDec(await zipRead(z, opf))), els = n => [...od.getElementsByTagNameNS('*', n)];
+  const man = {}; els('item').forEach(it=>{ man[it.getAttribute('id')] = { href: resolvePath(opf, it.getAttribute('href') || ''), type: it.getAttribute('media-type') || '', props: it.getAttribute('properties') || '' }; });
+  const isDoc = m => m && /x?html/.test(m.type);
+  let spine = els('itemref').filter(r=>r.getAttribute('linear') !== 'no').map(r=>man[r.getAttribute('idref')]).filter(isDoc).map(m=>m.href);
+  if(!spine.length) spine = els('itemref').map(r=>man[r.getAttribute('idref')]).filter(isDoc).map(m=>m.href);
+  const md = od.getElementsByTagNameNS('*', 'metadata')[0], dc = n => md ? [...md.getElementsByTagNameNS('*', n)].map(e=>(e.textContent || '').trim()).filter(Boolean) : [];
+  let cover = Object.values(man).find(m=>/cover-image/.test(m.props));
+  if(!cover){ const mc = els('meta').find(m=>m.getAttribute('name') === 'cover'); if(mc) cover = man[mc.getAttribute('content')]; }
+  if(cover && !/^image\//.test(cover.type)) cover = null;
+  const isbn = dc('identifier').filter(s=>/^(urn:isbn:|isbn:?\s*)?[\d\- Xx]{10,17}$/i.test(s)).map(s=>toIsbn13(s.replace(/^(urn:isbn:|isbn:?\s*)/i, ''))).find(Boolean) || '';
+  return { z, spine, cover, isbn, title: dc('title')[0] || '', authors: dc('creator'), publisher: dc('publisher')[0] || '', lang: (dc('language')[0] || '').slice(0, 2).toLowerCase(),
+    year: ((dc('date')[0] || '').match(/\b(1[5-9]|20)\d\d\b/) || [''])[0], desc: dc('description')[0] || '' };
+}
+/*EB-CORE-END*/
+
+async function coverData(z, item){   // copertina dell'EPUB -> piccola immagine JPEG incorporata (max 320 px)
+  try{
+    const u8 = await zipRead(z, item.href); if(!u8) return '';
+    const url = URL.createObjectURL(new Blob([u8], { type: item.type }));
+    const img = await new Promise((res, rej)=>{ const i = new Image(); i.onload = ()=>res(i); i.onerror = rej; i.src = url; });
+    const w = Math.min(320, img.naturalWidth), h = Math.round(img.naturalHeight * w / img.naturalWidth), c = document.createElement('canvas');
+    c.width = w; c.height = h; c.getContext('2d').drawImage(img, 0, 0, w, h); URL.revokeObjectURL(url);
+    return c.toDataURL('image/jpeg', 0.75);
+  }catch(e){ return ''; }
+}
+
+/* Archivio dei file (IndexedDB, store "files"): i file restano solo su questo dispositivo */
+async function fileSet(id, blob){ const db = await idb(); if(!db || !db.objectStoreNames.contains('files')) return false;
+  return new Promise(res=>{ try{ const tx = db.transaction('files', 'readwrite'); tx.objectStore('files').put({ blob, at: Date.now() }, id); tx.oncomplete = () => res(true); tx.onerror = tx.onabort = () => res(false); }catch(e){ res(false); } }); }
+async function fileGet(id){ const db = await idb(); if(!db || !db.objectStoreNames.contains('files')) return null;
+  return new Promise(res=>{ try{ const q = db.transaction('files', 'readonly').objectStore('files').get(id); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }catch(e){ res(null); } }); }
+async function fileHas(id){ const db = await idb(); if(!db || !db.objectStoreNames.contains('files')) return false;
+  return new Promise(res=>{ try{ const q = db.transaction('files', 'readonly').objectStore('files').count(id); q.onsuccess = () => res(q.result > 0); q.onerror = () => res(false); }catch(e){ res(false); } }); }
+async function fileDel(id){ const db = await idb(); if(!db || !db.objectStoreNames.contains('files')) return;
+  return new Promise(res=>{ try{ const tx = db.transaction('files', 'readwrite'); tx.objectStore('files').delete(id); tx.oncomplete = tx.onerror = tx.onabort = () => res(); }catch(e){ res(); } }); }
+async function fileKeys(){ const db = await idb(); if(!db || !db.objectStoreNames.contains('files')) return [];
+  return new Promise(res=>{ try{ const q = db.transaction('files', 'readonly').objectStore('files').getAllKeys(); q.onsuccess = () => res(q.result || []); q.onerror = () => res([]); }catch(e){ res([]); } }); }
+
+let _ebTouched = new Set();   // file aggiunti o tolti nella scheda aperta: alla chiusura si eliminano quelli non più usati
+const ebUsed = () => { const s = new Set(); books.forEach(b=>(b.ebook || []).forEach(f=>s.add(f.id))); return s; };
+function ebAfterClose(){ const ids = [..._ebTouched]; _ebTouched = new Set(); if(!ids.length) return; const used = ebUsed(); ids.forEach(id=>{ if(!used.has(id)) fileDel(id); }); }
+async function ebGc(){   // pulizia: file che nessun libro né copia di sicurezza usa più (e più vecchi di un giorno)
+  try{
+    const keys = await fileKeys(); if(!keys.length) return;
+    const used = ebUsed(); ((await kvGet('snaps')) || []).forEach(s=>(s.data || []).forEach(b=>(b.ebook || []).forEach(f=>used.add(f.id))));
+    for(const k of keys){ if(used.has(k)) continue; const r = await fileGet(k); if(r && Date.now() - (r.at || 0) > 864e5) await fileDel(k); }
+  }catch(e){}
+}
+
+/* Sezione "Ebook" nella scheda del libro */
+async function renderEb(){
+  const box = $('ebList'); if(!box) return; const list = (cur && cur.ebook) || [];
+  if(!list.length){ box.innerHTML = ''; return; }
+  const have = await Promise.all(list.map(f=>fileHas(f.id)));
+  box.innerHTML = list.map((f, i)=>`<div class="ditem" style="flex-wrap:wrap"><span style="min-width:0;overflow-wrap:anywhere"><b>${esc(f.name)}</b><em>${esc(String(f.ext).toUpperCase())} · ${esc(fmtSize(f.size || 0))}</em>${have[i] ? '' : `<br><span class="note">${esc(t('ebMissing'))}</span>`}</span>`
+    + `<span class="dacts">${have[i] ? `<button type="button" class="dbtn" data-eb="open" data-i="${i}">${esc(t('ebOpen'))}</button><button type="button" class="dbtn" data-eb="dl" data-i="${i}">${esc(t('ebDown'))}</button>` : ''}<button type="button" class="dbtn" data-eb="rm" data-i="${i}">${esc(t('ebRemove'))}</button></span></div>`).join('');
+}
+async function ebAdd(file){
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  if(!EB_EXT.includes(ext)){ toast(t('ebBadType', { n: file.name })); return; }
+  const db = await idb(); if(!db || !db.objectStoreNames.contains('files')){ toast(t('ebNoStore')); return; }
+  const chk = await ebCheck(file, ext);
+  if(chk === 'drm'){ toast(t('ebDrm', { n: file.name })); return; }
+  if(chk === 'enc' && !confirm(t('ebPdfEnc', { n: file.name }))) return;
+  const id = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  if(!(await fileSet(id, file))){ toast(t('ebErr')); return; }
+  _ebTouched.add(id); readForm(cur);
+  cur.ebook = (cur.ebook || []).concat({ id, name: file.name, ext, size: file.size, at: Date.now() });
+  let filled = [];
+  if(ext === 'epub'){   // compila solo i campi ancora vuoti
+    try{
+      const m = await epubParse(file), put = (k, v, label)=>{ if(v && !cur[k]){ cur[k] = v; filled.push(label); } };
+      put('titolo', m.title, t('fTitle')); put('autori', m.authors.join(', '), t('fAuthors')); put('editore', m.publisher, t('fPublisher')); put('isbn', m.isbn, 'ISBN');
+      put('anno', m.year, t('fEdYear')); put('lingua', m.lang ? langName(m.lang) : '', t('fLang')); put('trama', stripHtml(m.desc), t('secPlot'));
+      if(cur.trama && filled.includes(t('secPlot'))) cur.tramaSrc = 'ebook';
+      if(!cur.copertina && m.cover){ const c = await coverData(m.z, m.cover); if(c){ cur.copertina = c; filled.push(t('ebCover')); } }
+    }catch(e){}
+  }
+  fillForm(); toast(filled.length ? t('ebFilled', { f: filled.join(', ') }) : t('ebAdded', { n: file.name }));
+}
+async function ebDownload(f, rec){
+  rec = rec || await fileGet(f.id); if(!rec){ toast(t('ebMissing')); return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(rec.blob); a.download = f.name; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+}
+async function ebOpen(f, w){
+  const rec = await fileGet(f.id); if(!rec){ if(w) w.close(); toast(t('ebMissing')); return; }
+  if(f.ext === 'epub'){ if(await rdOpen(f, rec)) return; toast(t('ebBadEpub')); return ebDownload(f, rec); }
+  if(f.ext === 'pdf' || f.ext === 'txt'){
+    const url = URL.createObjectURL(new Blob([rec.blob], { type: EB_MIME[f.ext] }));
+    if(w){ w.location.href = url; setTimeout(()=>URL.revokeObjectURL(url), 300000); return; }
+    URL.revokeObjectURL(url);
+  }
+  toast(t('ebNoRead')); ebDownload(f, rec);
+}
+$('ebAdd').addEventListener('click', ()=>$('ebFile').click());
+$('ebFile').addEventListener('change', async e=>{ const files = [...e.target.files]; e.target.value = ''; for(const f of files) await ebAdd(f); });
+$('ebList').addEventListener('click', e=>{
+  const b = e.target.closest('[data-eb]'); if(!b || !cur) return; const f = (cur.ebook || [])[+b.dataset.i]; if(!f) return;
+  if(b.dataset.eb === 'rm'){ cur.ebook.splice(+b.dataset.i, 1); if(!cur.ebook.length) delete cur.ebook; _ebTouched.add(f.id); renderEb(); }
+  else if(b.dataset.eb === 'dl') ebDownload(f);
+  else ebOpen(f, (f.ext === 'pdf' || f.ext === 'txt') ? window.open('', '_blank') : null);   // la finestra si apre subito, nel gesto dell'utente
+});
+
+/* Lettore EPUB integrato: un capitolo alla volta, testo ridimensionabile, ricorda dove sei arrivato */
+let RD = null;
+const MIME_IMG = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', svg: 'image/svg+xml', webp: 'image/webp' };
+async function rdOpen(f, rec){
+  let ep; try{ ep = await epubParse(rec.blob); if(!ep.spine.length) throw new Error('empty'); }catch(e){ return false; }
+  const pos = (await kvGet('pos:' + f.id)) || {}; let fs = 100; try{ fs = parseInt(localStorage.getItem('mpmlb_rdfs') || '100', 10) || 100; }catch(e){}
+  RD = { ep, f, i: 0, urls: [], fs };
+  $('ebRT').textContent = ep.title || f.name; openOv('ebReadOv'); await rdShow(Math.min(pos.i || 0, ep.spine.length - 1), pos.y || 0); return true;
+}
+async function rdBuild(path){
+  const ep = RD.ep, raw = await zipRead(ep.z, path), doc = new DOMParser().parseFromString(txtDec(raw), 'text/html');
+  doc.querySelectorAll('script, iframe, object, embed, base, form, meta[http-equiv]').forEach(n=>n.remove());
+  const blobUrl = async rel => {
+    if(!rel) return ''; if(/^data:image\//i.test(rel)) return rel; if(/^[a-z][a-z0-9+.-]*:/i.test(rel) || rel.startsWith('//')) return '';   // niente immagini remote: nessun tracciamento
+    const p = resolvePath(path, rel); if(!ep.z.map.has(p)) return ''; const u8 = await zipRead(ep.z, p);
+    const u = URL.createObjectURL(new Blob([u8], { type: MIME_IMG[p.split('.').pop().toLowerCase()] || 'application/octet-stream' })); RD.urls.push(u); return u;
+  };
+  for(const im of [...doc.querySelectorAll('img[src]')]) im.setAttribute('src', await blobUrl(im.getAttribute('src')));
+  for(const im of [...doc.querySelectorAll('image')]){ const a = im.hasAttribute('href') ? 'href' : 'xlink:href', v = im.getAttribute(a); if(v){ const u = await blobUrl(v); im.setAttribute('href', u); im.removeAttribute('xlink:href'); } }
+  let css = '';
+  for(const l of [...doc.querySelectorAll('link[rel~="stylesheet"][href]')]){
+    const p = resolvePath(path, l.getAttribute('href'));
+    try{ if(ep.z.map.has(p)) css += txtDec(await zipRead(ep.z, p)).replace(/@import[^;]+;/g, '').replace(/url\([^)]*\)/g, 'none') + '\n'; }catch(e){}
+  }
+  doc.querySelectorAll('style').forEach(s=>{ css += (s.textContent || '').replace(/@import[^;]+;/g, '').replace(/url\([^)]*\)/g, 'none') + '\n'; });
+  const base = `html{background:#EDE6D3}body{margin:0 auto;padding:18px 20px 48px;max-width:42em;background:#EDE6D3;color:#17261F;font-family:Literata,Georgia,serif;font-size:${RD.fs}%;line-height:1.6;overflow-wrap:break-word}img,svg,video{max-width:100%;height:auto}a{color:#7A4A1E}h1,h2,h3{line-height:1.25}`;
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style><style>${base}</style></head><body>${doc.body.innerHTML}</body></html>`;
+}
+function rdY(){ try{ const d = $('ebFrame').contentDocument.scrollingElement, m = d.scrollHeight - d.clientHeight; return m > 0 ? Math.round(d.scrollTop / m * 1000) / 1000 : 0; }catch(e){ return 0; } }
+function rdSavePos(){ if(RD) kvSet('pos:' + RD.f.id, { i: RD.i, y: rdY() }); }
+async function rdShow(i, y, frag){
+  if(!RD) return; const ep = RD.ep; i = Math.max(0, Math.min(ep.spine.length - 1, i)); RD.i = i;
+  RD.urls.forEach(u=>URL.revokeObjectURL(u)); RD.urls = [];
+  let html; try{ html = await rdBuild(ep.spine[i]); }catch(e){ html = '<p style="font-family:sans-serif;padding:20px">…</p>'; }
+  if(!RD) return; const fr = $('ebFrame'); fr.onload = () => rdHook(y || 0, frag); fr.srcdoc = html;
+  $('ebPos').textContent = t('ebPart', { i: i + 1, n: ep.spine.length }); $('ebPrev').disabled = i === 0; $('ebNext').disabled = i === ep.spine.length - 1;
+  kvSet('pos:' + RD.f.id, { i, y: y || 0 });
+}
+function rdHook(y, frag){
+  let doc; try{ doc = $('ebFrame').contentDocument; }catch(e){ return; } if(!doc || !RD) return;
+  doc.addEventListener('click', ev=>{
+    const a = ev.target.closest && ev.target.closest('a[href]'); if(!a) return; ev.preventDefault();
+    const h = a.getAttribute('href') || '', hash = h.includes('#') ? h.slice(h.indexOf('#') + 1) : '';
+    if(/^https?:/i.test(h)){ window.open(h, '_blank', 'noopener'); return; }
+    if(/^[a-z][a-z0-9+.-]*:/i.test(h)) return;
+    let fid = hash; try{ fid = decodeURIComponent(hash); }catch(e){}
+    if(h.startsWith('#')){ const el = fid && doc.getElementById(fid); if(el) el.scrollIntoView(); return; }
+    const k = RD.ep.spine.indexOf(resolvePath(RD.ep.spine[RD.i], h)); if(k >= 0) rdShow(k, 0, fid);
+  });
+  const d = doc.scrollingElement;
+  if(frag){ const el = doc.getElementById(frag); if(el){ el.scrollIntoView(); return; } }
+  if(y && d) d.scrollTop = y * (d.scrollHeight - d.clientHeight);
+}
+function rdClose(){
+  if(!RD) return; rdSavePos(); RD.urls.forEach(u=>URL.revokeObjectURL(u)); RD = null; $('ebFrame').onload = null; $('ebFrame').srcdoc = '';
+}
+$('ebPrev').addEventListener('click', ()=>{ if(RD) rdShow(RD.i - 1, 0); });
+$('ebNext').addEventListener('click', ()=>{ if(RD) rdShow(RD.i + 1, 0); });
+function rdFont(d){ if(!RD) return; const y = rdY(); RD.fs = Math.max(70, Math.min(220, RD.fs + d)); try{ localStorage.setItem('mpmlb_rdfs', String(RD.fs)); }catch(e){} rdShow(RD.i, y); }
+$('ebFm').addEventListener('click', ()=>rdFont(-10)); $('ebFp').addEventListener('click', ()=>rdFont(10));
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) rdSavePos(); });
+
 /* ---------- Avvio ---------- */
 async function init(){
   applyI18n();
-  const saved = await kvGet('library'); if(Array.isArray(saved)) books = saved;
+  const saved = await kvGet('library'); if(Array.isArray(saved)){ books = saved; setTimeout(ebGc, 6000); }
   renderAll(); renderInstall(); autoSnapshot();
   const h = location.hash.replace('#', ''); if(['reading', 'people', 'stats'].includes(h)) switchTab(h);
   setView(VIEW);

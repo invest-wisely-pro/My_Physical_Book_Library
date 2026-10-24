@@ -7,7 +7,7 @@ import { createWriteStream, mkdirSync, writeFileSync } from 'node:fs';
 import { Readable } from 'node:stream';
 import { createGunzip, gzipSync } from 'node:zlib';
 import { createInterface } from 'node:readline';
-const BASE = 'https://openlibrary.org/data/', SHARDS = 512, MAX_INTL = +process.env.MAX_INTL || 3000000, MAX_IT_SEARCH = 300000;
+const BASE = 'https://openlibrary.org/data/', SHARDS = 512, MAX_INTL = +process.env.MAX_INTL || 3000000, MAX_IT_SEARCH = 400000;
 const UA = { 'User-Agent': 'MyPhysicalBookLibrary-indexer/2.0 (GitHub Actions; personal library app)' };
 const L = { ita: 'it', eng: 'en', fre: 'fr', fra: 'fr', ger: 'de', deu: 'de', spa: 'es', por: 'pt', lat: 'la', rus: 'ru', jpn: 'ja', dut: 'nl', swe: 'sv', gre: 'el' };
 function ok13(i){ if(!/^97[89]\d{10}$/.test(i)) return false; let s = 0; for(let k = 0; k < 12; k++) s += +i[k] * (k % 2 ? 3 : 1); return (10 - s % 10) % 10 === +i[12]; }
@@ -39,13 +39,13 @@ for await (const l of lines('ol_dump_editions_latest.txt.gz')){
   const year = (String(j.publish_date || '').match(/\d{4}/) || [''])[0];
   const row = [isbn, (j.subtitle ? title + ': ' + j.subtitle : title).slice(0, 140), au, year, lang];
   const s = shards[parseInt(isbn.slice(3, 12), 10) % SHARDS];
-  if(lang === 'it'){ if(!s.has(isbn)) itn++; s.set(isbn, row); if(au && it.size < 1e7) it.set(isbn, row); }
+  if(lang === 'it'){ if(!s.has(isbn)) itn++; s.set(isbn, row); it.set(isbn, row); }
   else if(intl < MAX_INTL && !s.has(isbn)){ s.set(isbn, row); intl++; }   // estere: tutte finché c'è spazio (priorità a quelle con autore)
 }
 mkdirSync('data/s', { recursive: true });
 let total = 0;
 shards.forEach((m, i) => { const a = [...m.values()]; total += a.length; writeFileSync(`data/s/${i}.json.gz`, gzipSync(JSON.stringify(a), { level: 9 })); });
-const itl = [...it.values()].sort((a, b) => (b[3] || 0) - (a[3] || 0)).slice(0, MAX_IT_SEARCH);   // più recenti per prime
+const itl = [...it.values()].sort((a, b) => (b[3] || 0) - (a[3] || 0) || (b[2] ? 1 : 0) - (a[2] ? 1 : 0)).slice(0, MAX_IT_SEARCH);   // più recenti per prime
 writeFileSync('data/it-search.json.gz', gzipSync(JSON.stringify(itl), { level: 9 }));
 writeFileSync('data/meta.json', JSON.stringify({ v: 2, built: new Date().toISOString(), n: total, it: itn, itSearch: itl.length, shards: SHARDS }));
 console.log('Fatto: totale', total, 'italiane', itn, 'ricerca it', itl.length);
