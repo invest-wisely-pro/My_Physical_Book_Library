@@ -1,0 +1,42 @@
+name: Indice libri e pubblicazione
+on:
+  push: { branches: [main] }
+  schedule: [{ cron: '17 4 1 * *' }]     # il 1° di ogni mese ricostruisce l'indice
+  workflow_dispatch:
+    inputs:
+      rebuild: { description: 'Ricostruire l indice da Open Library (true/false)', default: 'true' }
+permissions: { contents: write, pages: write, id-token: write }
+concurrency: { group: site, cancel-in-progress: false }
+jobs:
+  data:
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.rebuild == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node --max-old-space-size=6000 scripts/build-dump.mjs
+      - name: Salva l'indice sul ramo data-store (senza far crescere la cronologia)
+        run: |
+          cd data && git init -q -b data-store && git config user.name indice-bot && git config user.email actions@users.noreply.github.com
+          git add -A && git commit -qm "indice $(date -u +%F)" && git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data-store
+  deploy:
+    needs: data
+    if: always() && !cancelled()
+    runs-on: ubuntu-latest
+    environment: { name: github-pages, url: '${{ steps.d.outputs.page_url }}' }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: { ref: data-store, path: _ds }
+        continue-on-error: true
+      - run: |
+          sed -i "s/const VERSION = '[^']*'/const VERSION = 'mpmlb-${GITHUB_SHA::7}'/" sw.js
+          mkdir -p _site && cp -r index.html sw.js manifest.webmanifest icons _site/
+          [ -d _ds ] && mkdir -p _site/data && cp -r _ds/s _ds/*.gz _ds/meta.json _site/data/ 2>/dev/null || true
+          touch _site/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: _site }
+      - id: d
+        uses: actions/deploy-pages@v4
