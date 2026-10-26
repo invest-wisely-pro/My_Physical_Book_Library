@@ -51,3 +51,23 @@ BUONO A SAPERSI
     dato o copertina può mancare: puoi completarli a mano.
   - Aggiornamenti: il workflow \"Indice libri e pubblicazione\" (scheda Actions) gira da solo ogni mese e aggiorna l’indice offline di ISBN, titoli e autori; l’app si aggiorna da sola.
   - Le copertine già viste restano disponibili anche offline. L'app chiede ai motori di ricerca di non indicizzarla.
+
+RICERCA PIÙ POTENTE (ottobre 2026)
+==================================
+  - ISBN: Google Books viene provato in quattro modi (anche a 10 cifre e come testo), più Open Library e
+    l'indice offline. Se una fonte conosce solo titolo e autore, l'app cerca la stessa edizione per titolo.
+  - Titolo: tre ricerche su Google Books unite, con le edizioni italiane in cima (riconosciute dalla lingua,
+    dall'ISBN 978-88 / 979-12 o dall'editore). "Solo libri in italiano" non scarta più i libri senza lingua.
+  - Libri stranieri: scrivendo il titolo originale (es. "The Catcher in the Rye") l'app propone anche
+    l'edizione italiana ("Il giovane Holden"), grazie a Wikidata.
+  - Sotto i risultati una riga dice quali fonti hanno risposto (✓), quali sono al limite (⚠️) o ferme (✗).
+
+DOPO L'AGGIORNAMENTO: RICOSTRUISCI L'INDICE
+  L'indice ora riconosce come italiani anche i libri senza lingua indicata e conserva l'editore.
+  Su GitHub: Actions → "Indice libri e pubblicazione" → "Run workflow" (rebuild = true). Richiede qualche ora.
+
+CHIAVE GOOGLE BOOKS (FACOLTATIVA)
+  Senza chiave Google Books concede un numero limitato di ricerche: se la riga delle fonti mostra ⚠️ spesso,
+  crea una chiave gratuita (console.cloud.google.com → abilita "Books API" → Credenziali → Crea chiave API;
+  conviene limitarla al tuo indirizzo github.io) e inseriscila in Strumenti → 🔑 Chiave Google Books.
+  Resta solo sul tuo dispositivo e non finisce nei backup.

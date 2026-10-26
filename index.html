@@ -167,6 +167,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
 .undo .btn{background:var(--leather); color:var(--paper); border-color:var(--leather); height:36px;}
 .inst-steps{padding-left:22px; line-height:1.7;}
 .hidden{display:none !important;}
+.res .via{color:var(--gold2) !important; font-weight:600;} .src-line{margin:8px 2px 0;}
 .seg{display:inline-flex; border:1px solid var(--line); border-radius:21px; overflow:hidden; height:42px;}
 .seg button{background:var(--forest); border:0; padding:0 14px; cursor:pointer; color:var(--paper2); font-weight:600;}
 .seg button[aria-pressed="true"]{background:var(--gold); color:#1b160a;}
@@ -405,6 +406,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
       <button class="btn" id="tCsv" data-i18n="tCsv">📄 Esporta CSV</button>
       <button class="btn" id="tCsvIn" data-i18n="tCsvIn">📄 Importa CSV</button>
       <button class="btn" id="tLang"></button>
+      <button class="btn" id="tGbKey" data-i18n="tGbKey">🔑 Chiave Google Books (facoltativa)</button>
       <button class="btn" id="tHealth" data-i18n="tHealth">🩺 Verifica servizi</button>
       <button class="btn" id="tIdx">🔄 Indice offline: guida</button>
       <button class="btn" id="tDiag" data-i18n="tDiag">🩺 Diagnostica</button>
@@ -469,7 +471,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
    Fonti: Google Books (edizioni, trame; senza chiave) e Open Library
    (edizioni, opere, copertine; libera). Tutto resta sul dispositivo.
    ===================================================================== */
-const APP_VERSION = 'books-2026-10-10';
+const APP_VERSION = 'books-2026-10-11';
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r=>setTimeout(r, ms));
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
@@ -561,6 +563,16 @@ const I18N = {
     hcBlocked:'unreachable: blocked by the browser or the network', hcTimeout:'timed out: responding too slowly', hcHttp:'the service responds with error {c}', hcCovers:'Covers', hcStorage:'On-device storage',
     hcPersist:'protected from automatic cleanup', hcOfflineMode:'Offline mode', hcSwOn:'active: the app opens without a connection', hcSwOff:'not active: normal in the single-file version or on the very first open', hcCopy:'📋 Copy the report', hcAgain:'Check again', copied:'Copied' }
 };
+Object.assign(I18N.it, { srcLine:'Fonti: Google Books {gb} · Open Library {ol} · indice offline {ix}', gbLimit:'Google Books ha raggiunto il limite di ricerche gratuite per ora: riprova tra un minuto, oppure aggiungi la tua chiave gratuita in Strumenti → 🔑 Chiave Google Books.',
+  gbLimitKey:'Google Books ha raggiunto il limite anche con la tua chiave: riprova più tardi.', gbDown:'Google Books non risponde in questo momento: i risultati arrivano dalle altre fonti.',
+  gbLimitAll:'Google Books ha raggiunto il limite di ricerche e le altre fonti non hanno risposto: riprova tra un minuto.', viaIt:'edizione italiana di «{t}»',
+  tGbKey:'🔑 Chiave Google Books (facoltativa)', gbKeyPrompt:'Chiave Google Books (facoltativa e gratuita). Toglie il limite di ricerche giornaliero. Si crea su console.cloud.google.com → API "Books API" → Credenziali. Resta solo su questo dispositivo. Lascia vuoto per toglierla.',
+  gbKeySaved:'Chiave salvata su questo dispositivo', gbKeyRemoved:'Chiave tolta' });
+Object.assign(I18N.en, { srcLine:'Sources: Google Books {gb} · Open Library {ol} · offline index {ix}', gbLimit:'Google Books has reached its free search limit for now: try again in a minute, or add your free key in Tools → 🔑 Google Books key.',
+  gbLimitKey:'Google Books has reached its limit even with your key: try again later.', gbDown:'Google Books isn\'t responding right now: results come from the other sources.',
+  gbLimitAll:'Google Books has reached its search limit and the other sources didn\'t respond: try again in a minute.', viaIt:'Italian edition of “{t}”',
+  tGbKey:'🔑 Google Books key (optional)', gbKeyPrompt:'Google Books key (optional and free). It removes the daily search limit. Create it at console.cloud.google.com → "Books API" → Credentials. It stays on this device only. Leave empty to remove it.',
+  gbKeySaved:'Key saved on this device', gbKeyRemoved:'Key removed' });
 function t(k, vars){ let s = (I18N[LANG] && I18N[LANG][k]) || I18N.it[k] || k; if(vars) Object.keys(vars).forEach(v=>{ s = s.split('{' + v + '}').join(vars[v]); }); return s; }
 
 const FORMATS = ['rilegato', 'brossura', 'tascabile', 'cofanetto', 'altro'];
@@ -618,14 +630,85 @@ async function wdAuthors(name){   // Wikidata: nome → autori in italiano (aiut
   const j = await jget(`https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(name)}&language=it&uselang=it&type=item&limit=8&format=json&origin=*`);
   return ((j && j.search) || []).filter(x=>/scrittor|autor|poet|romanzier|saggist|giornalist|filosof|drammaturg|narrator|fumettist|storic/i.test(x.description || '')).slice(0, 5).map(x=>({ label: x.label, desc: x.description || '' }));
 }
-async function gbSearch(o){
+/* ---------- Google Books, più strade per trovare le edizioni (anche italiane) ---------- */
+const gbKey = () => { try{ return (localStorage.getItem('mpmlb_gbkey') || '').trim(); }catch(e){ return ''; } };
+async function gbQuery(q, extra){
   if(Date.now() < _gbCool) throw new Error('http429');
-  const q = o.isbn ? 'isbn:' + o.isbn : [o.title ? 'intitle:' + o.title : '', o.author ? 'inauthor:' + o.author : ''].filter(Boolean).join('+');
-  const u = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(o.isbn ? q : q.replace(/[’'`´]/g, ' '))}&maxResults=20&printType=books${!o.isbn && onlyIt() ? '&langRestrict=it' : ''}`;
+  const k = gbKey(), u = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=20&printType=books${extra || ''}${k ? '&key=' + encodeURIComponent(k) : ''}`;
   let j; try{ try{ j = await jget(u); }catch(e){ if(!/http429/.test(String(e.message))) throw e; await new Promise(r=>setTimeout(r, 1800)); j = await jget(u); } }
   catch(e){ if(/http429/.test(String(e.message))) _gbCool = Date.now() + 60000; throw e; }
   return ((j && j.items) || []).map(gbItem);
 }
+function isbn13to10(i){ if(!/^978\d{10}$/.test(i)) return ''; const b = i.slice(3, 12); let s = 0; for(let k = 0; k < 9; k++) s += +b[k] * (10 - k); const c = (11 - s % 11) % 11; return b + (c === 10 ? 'X' : String(c)); }
+async function gbIsbn(isbn){   // quattro strade; con le ricerche libere si accetta solo un libro che ha davvero quell'ISBN
+  const i10 = isbn13to10(isbn), has = x => x.isbn === isbn;
+  const tries = [['isbn:' + isbn, false], i10 && ['isbn:' + i10, false], [isbn, true], i10 && [i10, true]].filter(Boolean);
+  let lastErr = null;
+  for(const [q, strict] of tries){
+    try{ const r = await gbQuery(q); const hit = strict ? r.filter(has) : (r.filter(has).length ? r.filter(has) : r.slice(0, 1)); if(hit.length) return hit; }
+    catch(e){ lastErr = e; if(/http429|http403/.test(String(e.message))) break; }
+  }
+  if(lastErr) throw lastErr; return [];
+}
+async function gbFind(o){   // titolo/autore: precisa in italiano, libera in italiano, precisa in tutte le lingue
+  const t = String(o.title || '').replace(/[’'`´]/g, ' ').trim(), a = String(o.author || '').trim();
+  const strict = [t ? 'intitle:' + t : '', a ? 'inauthor:' + a : ''].filter(Boolean).join(' '), free = [t, a].filter(Boolean).join(' ');
+  const plan = [[strict, '&langRestrict=it'], [free, '&langRestrict=it'], [strict, '']];
+  const out = [], seen = new Set(); let ok = 0, lastErr = null;
+  for(const [q, x] of plan){
+    if(!q) continue;
+    try{ const r = await gbQuery(q, x); ok++; r.forEach(v=>{ const key = v.isbn || v.id; if(!seen.has(key)){ seen.add(key); out.push(v); } }); }
+    catch(e){ lastErr = e; if(/http429|http403/.test(String(e.message))) break; }
+    if(out.filter(isItalianItem).length >= 12) break;
+  }
+  if(!ok && lastErr) throw lastErr;
+  return out;
+}
+async function gbSearch(o){ return o.isbn ? gbIsbn(o.isbn) : gbFind(o); }
+
+/* ---------- Cosa rende "italiana" un'edizione: lingua, ISBN (978-88, 979-12) o editore ---------- */
+const IT_PUBS = ['mondadori', 'einaudi', 'feltrinelli', 'garzanti', 'rizzoli', 'bompiani', 'adelphi', 'sellerio', 'laterza', 'il mulino', 'longanesi', 'marsilio', 'neri pozza', 'giunti', 'newton compton',
+  'tea', 'sperling', 'piemme', 'salani', 'guanda', 'e o', 'fazi', 'minimum fax', 'bur', 'sonzogno', 'frassinelli', 'fanucci', 'utet', 'zanichelli', 'hoepli', 'castelvecchi', 'iperborea', 'nottetempo',
+  'la nave di teseo', 'baldini', 'chiarelettere', 'add editore', 'sur', 'marcos y marcos', 'voland', 'keller', 'bollati boringhieri', 'quodlibet', 'donzelli', 'carocci', 'franco angeli', 'il saggiatore',
+  'skira', 'electa', 'corbaccio', 'vallardi', 'de agostini', 'ponte alle grazie', 'solferino', 'harpercollins italia', 'sem', 'il castoro', 'camelozampa', 'babalibri', 'gribaudo', 'emme edizioni',
+  'edizioni el', 'einaudi ragazzi', 'bao publishing', 'star comics', 'panini', 'j pop', 'planet manga', 'tunue', 'coconino', 'sergio bonelli', 'rizzoli lizard', 'mondadori ragazzi', 'oscar mondadori',
+  'dalai', 'nord', 'editrice nord', 'cairo', 'tre60', 'garzanti libri', 'nutrimenti', 'edizioni clichy', 'black coffee', 'mattioli 1885', 'la tartaruga', 'bompiani overlook', 'sironi', 'mimesis', 'aragno',
+  'ets', 'olschki', 'raffaello cortina', 'codice edizioni', 'bollati', 'salerno editrice', 'lindau', 'edb', 'san paolo', 'paoline', 'ancora', 'jaca book', 'morcelliana', 'queriniana'];
+const isItalianIsbn = i => /^97(888|912)/.test(String(i || ''));
+function isItalianItem(x){
+  if(!x) return false; if(x.lang === 'it' || isItalianIsbn(x.isbn)) return true;
+  const p = ' ' + nrm(x.publisher) + ' '; return p.trim() ? IT_PUBS.some(n=>p.includes(' ' + n + ' ')) : false;
+}
+function dedupeEd(list){
+  const out = [], idx = new Map();
+  for(const x of list){
+    const k = x.isbn || [nrm(x.title), nrm((x.authors || [])[0]), nrm(x.publisher), x.year].join('|'), j = idx.get(k);
+    if(j === undefined){ idx.set(k, out.length); out.push(x); }
+    else{ const y = out[j]; ['cover', 'desc', 'publisher', 'pages', 'year', 'lang', 'id'].forEach(f=>{ if(!y[f] && x[f]) y[f] = x[f]; }); if(!y.via && x.via) y.via = x.via; }
+  }
+  return out;
+}
+function rankEditions(list, o, itT){
+  const qt = nrm(o.title), it2 = nrm(itT || ''), ln = lastName(o.author);
+  const score = x => { const tt = nrm(x.title); let s = 0;
+    if(isItalianItem(x)) s += 100; if(tt && (tt === qt || (it2 && tt === it2))) s += 30; else if(tt && ((qt && tt.startsWith(qt)) || (it2 && tt.startsWith(it2)))) s += 10;
+    if(ln && (x.authors || []).some(a=>nrm(a).includes(ln))) s += 20; if(x.isbn) s += 10; if(x.cover) s += 5; if(x.src === 'gb') s += 2; return s; };
+  return list.map((x, i)=>[score(x), i, x]).sort((a, b)=>b[0] - a[0] || a[1] - b[1]).map(z=>z[2]);
+}
+async function wdItTitle(o){   // "The Catcher in the Rye" → "Il giovane Holden" (titolo italiano dell'opera, da Wikidata)
+  if(!o.title || o.title.trim().length < 3) return null;
+  const ln = lastName(o.author), found = [];
+  for(const lg of ['en', 'it']){
+    const j = await jget(`https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(o.title)}&language=${lg}&uselang=it&type=item&limit=6&format=json&origin=*`);
+    ((j && j.search) || []).forEach(h=>{ if(!found.some(f=>f.id === h.id)) found.push(h); });
+  }
+  const c = found.filter(h=>/romanz|libro|opera letteraria|racconto|saggio|raccolta|poema|novel|book|fumett|trattat|novella|dramma|commedia|tragedia/i.test(h.description || '') && (!ln || nrm(h.description || '').includes(ln))).slice(0, 3);
+  if(!c.length) return null;
+  const e = await jget(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${c.map(x=>x.id).join('|')}&props=labels&languages=it|en&format=json&origin=*`);
+  for(const h of c){ const L = (e && e.entities && e.entities[h.id] && e.entities[h.id].labels) || {}; if(L.it && L.it.value) return { it: L.it.value, en: (L.en && L.en.value) || '', id: h.id }; }
+  return null;
+}
+
 /* ---------- Indice offline (data/books-index.json, rigenerato ogni mese da GitHub Actions) ---------- */
 let IDX = null; const _sh = new Map();
 const nrm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -633,7 +716,7 @@ async function gzJson(url){ try{ const r = await fetch(url); if(!r.ok) return nu
   if(u[0] === 0x1f && u[1] === 0x8b){ if(typeof DecompressionStream === 'undefined') return null; txt = await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).text(); } else txt = new TextDecoder().decode(u);
   return JSON.parse(txt); }catch(e){ return null; } }
 async function loadIdx(){ try{ const r = await fetch('data/meta.json'); if(!r.ok) return; const m = await r.json(); if(m && m.v === 2) IDX = Object.assign({ b: null, _p: null }, m); }catch(e){} }
-function idxItem(x){ return { src: 'ix', id: '', title: x[1], sub: '', authors: x[2] ? x[2].split(' | ') : [], publisher: '', year: x[3] || '', pages: '', isbn: x[0], lang: x[4] || '', cats: [], desc: '', cover: '' }; }
+function idxItem(x){ return { src: 'ix', id: '', title: x[1], sub: '', authors: x[2] ? x[2].split(' | ') : [], publisher: x[5] || '', year: x[3] || '', pages: '', isbn: x[0], lang: x[4] || '', cats: [], desc: '', cover: '' }; }
 async function idxLookup(isbn){   // ISBN di tutto il mondo: scarica solo il file (shard) che lo contiene
   if(!IDX) return null; const k = parseInt(isbn.slice(3, 12), 10) % IDX.shards;
   if(!_sh.has(k)) _sh.set(k, gzJson(`data/s/${k}.json.gz`).then(a=>{ const m = new Map(); (a || []).forEach(x=>m.set(x[0], x)); return m; }));
@@ -658,7 +741,7 @@ function titleVariants(t){   // "Miss Bee e il principe d'inverno" -> versione p
 }
 async function olSearch(o){
   const p = o.isbn ? 'isbn=' + o.isbn : [o.title ? 'title=' + encodeURIComponent(o.title) : '', o.author ? 'author=' + encodeURIComponent(o.author) : ''].filter(Boolean).join('&');
-  const lg = !o.isbn && onlyIt() ? '&language=ita' : '';
+  const lg = !o.isbn && onlyIt() && !o.anyLang ? '&language=ita' : '';
   let j = await jget(`https://openlibrary.org/search.json?${p}${lg}&limit=30&fields=${OL_FIELDS}`);
   if(!o.isbn) for(const tv of titleVariants(o.title || o.author)){ if(j && j.docs && j.docs.length) break;
     const qq = [tv, o.title ? o.author : ''].filter(Boolean).join(' '); j = await jget(`https://openlibrary.org/search.json?q=${encodeURIComponent(qq)}${lg}&limit=30&fields=${OL_FIELDS}`); }
@@ -669,6 +752,22 @@ async function olEdition(isbn){ return jget(`https://openlibrary.org/isbn/${isbn
 function translatorFrom(s){ const m = String(s || '').match(/(?:trad(?:uzione|otto|otta|\.)?|translated)\s+(?:di|da|by)\s+([^;,.()\[\]]+)/i); return m ? m[1].trim() : ''; }
 function physFormat(s){ s = String(s || '').toLowerCase(); if(/hard|rileg|cartonat/.test(s)) return 'rilegato'; if(/mass market|pocket|tascab/.test(s)) return 'tascabile'; if(/paper|bross|soft/.test(s)) return 'brossura'; if(/box|cofanett/.test(s)) return 'cofanetto'; return s ? 'altro' : ''; }
 async function lookupIsbn(isbn, seed){
+  const x = await lookupIsbnCore(isbn, seed);
+  if(x && !x._empty){
+    if(x.titolo && (!x.copertina || !x.trama || !x.editore || !x.pagine)){
+      try{ const alt = await gbFind({ title: x.titolo, author: String(x.autori || '').split(',')[0].trim() });
+        const same = alt.find(a=>a.isbn === isbn);
+        if(same){ if(!x.copertina && same.cover) x.copertina = same.cover; if(!x.editore && same.publisher) x.editore = same.publisher; if(!x.pagine && same.pages) x.pagine = same.pages; if(!x.gbId) x.gbId = same.id; }
+        const twin = same || alt.find(a=>nrm(a.title) === nrm(x.titolo) && a.desc && (!a.lang || a.lang === (isItalianIsbn(isbn) ? 'it' : a.lang)));
+        if(!x.trama && twin && twin.desc){ x.trama = twin.desc; x.tramaSrc = 'Google Books'; }
+        if(!x.genere && twin && twin.cats && twin.cats.length) x.genere = genIt(twin.cats.slice(0, 2).join(', '));
+      }catch(e){}
+    }
+    if(!x.lingua && isItalianIsbn(isbn)) x.lingua = langName('it');
+  }
+  return x;
+}
+async function lookupIsbnCore(isbn, seed){
   const [g, e, o, xr, bkr] = await Promise.allSettled([gbSearch({ isbn }), olEdition(isbn), olSearch({ isbn }), idxLookup(isbn), olBooksApi(isbn)]);
   const ixv = xr.status === 'fulfilled' ? xr.value : null;
   if(g.status === 'rejected' && e.status === 'rejected' && o.status === 'rejected' && !ixv) throw new Error('src');
@@ -939,17 +1038,38 @@ async function runFind(){
   if(o.isbn){ const i = toIsbn13(o.isbn); if(!i){ toast(t('badIsbn')); return; } return loadIsbn(i); }
   const box = $('results'), btn = $('findBtn');
   box.innerHTML = `<div class="note">${t('searching')}</div>`; btn.disabled = true;
+  const st = {}, why = e => /http429|http403/.test(String(e && e.message)) ? 'limit' : 'down';
+  const track = (name, p) => p.then(v=>{ if(st[name] !== 'ok') st[name] = 'ok'; return v; }, e=>{ if(st[name] !== 'ok') st[name] = why(e); return []; });
   try{
-    const [g, ol, wa] = await Promise.allSettled([gbSearch(o), olSearch(o), o.author ? wdAuthors(o.author) : Promise.resolve([])]);
-    _wa = wa.status === 'fulfilled' ? wa.value : [];
-    const ix = await idxSearch(o);
-    if(g.status === 'rejected' && ol.status === 'rejected' && !ix.length) throw new Error('src');
-    _gb = g.status === 'fulfilled' ? g.value : []; if(onlyIt()) _gb = _gb.filter(x=>!x.lang || x.lang === 'it'); _gb = _gb.concat(ix.filter(x=>!_gb.some(y=>y.isbn && y.isbn === x.isbn))); _ol = ol.status === 'fulfilled' ? ol.value : [];
-    const row = (x, k, i) => `<button type="button" class="res" data-${k}="${i}">${x.cover ? `<img src="${esc(x.cover)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">` : '<span class="noimg"></span>'}<span style="min-width:0"><b>${esc(x.title)}${x.sub ? ': ' + esc(x.sub) : ''}</b><span>${esc(x.authors.join(', '))}</span><span>${esc(k === 'g' ? [t('resEdition'), x.publisher, x.year, x.isbn, x.pages ? t('pages', { n: x.pages }) : '', x.lang ? langName(x.lang) : ''].filter(Boolean).join(', ') : [t('resWork', { n: x.editions }), x.firstYear].filter(Boolean).join(', '))}</span></span></button>`;
+    const olP = olSearch(o).then(r=>(r.length || !onlyIt()) ? r : olSearch(Object.assign({}, o, { anyLang: true })));
+    const [g, ol, wa, itT] = await Promise.all([track('gb', gbSearch(o)), track('ol', olP), o.author ? wdAuthors(o.author).catch(()=>[]) : Promise.resolve([]), wdItTitle(o).catch(()=>null)]);
+    _wa = wa;
+    const ix = await idxSearch(o).catch(()=>[]); st.ix = IDX ? 'ok' : 'none';
+    let extra = [];
+    if(itT && nrm(itT.it) && nrm(itT.it) !== nrm(o.title)){   // edizioni italiane di un libro straniero
+      const o2 = { title: itT.it, author: o.author };
+      const [g2, ix2] = await Promise.all([track('gb', gbSearch(o2)), idxSearch(o2).catch(()=>[])]);
+      extra = g2.concat(ix2).map(x=>Object.assign(x, { via: itT.it }));
+    }
+    if(st.gb !== 'ok' && st.ol !== 'ok' && !ix.length && !extra.length) throw new Error(st.gb === 'limit' ? 'limit' : 'src');
+    let eds = rankEditions(dedupeEd([...extra, ...g, ...ix]), o, itT && itT.it);
+    if(onlyIt()) eds = eds.filter(x=>isItalianItem(x) || !x.lang);
+    _gb = eds; _ol = ol;
+    const meta = x => [isItalianItem(x) ? '🇮🇹' : '', t('resEdition'), x.publisher, x.year, x.isbn, x.pages ? t('pages', { n: x.pages }) : '', x.lang ? langName(x.lang) : ''].filter(Boolean).join(', ').replace('🇮🇹, ', '🇮🇹 ');
+    const img = x => x.cover ? `<img src="${esc(x.cover)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">` : '<span class="noimg"></span>';
+    const row = (x, i) => `<button type="button" class="res" data-g="${i}">${img(x)}<span style="min-width:0"><b>${esc(x.title)}${x.sub ? ': ' + esc(x.sub) : ''}</b><span>${esc((x.authors || []).join(', '))}</span><span>${esc(meta(x))}</span>${x.via ? `<span class="via">${esc(t('viaIt', { t: x.via }))}</span>` : ''}</span></button>`;
+    const orow = (x, i) => `<button type="button" class="res" data-o="${i}">${img(x)}<span style="min-width:0"><b>${esc(x.title)}${x.sub ? ': ' + esc(x.sub) : ''}</b><span>${esc((x.authors || []).join(', '))}</span><span>${esc([t('resWork', { n: x.editions }), x.firstYear].filter(Boolean).join(', '))}</span></span></button>`;
     const arow = (x, i) => `<button type="button" class="res" data-a="${i}"><span class="noimg"></span><span style="min-width:0"><b>👤 ${esc(x.label)}</b><span>${esc(x.desc)}</span></span></button>`;
-    box.innerHTML = (_gb.length || _ol.length || _wa.length) ? _wa.map(arow).join('') + _gb.map((x, i)=>row(x, 'g', i)).join('') + _ol.map((x, i)=>row(x, 'o', i)).join('') : noResHtml(o);
-  }catch(e){ box.innerHTML = `<div class="note">${t('srcError')}</div>`; }
+    box.innerHTML = (_gb.length || _ol.length || _wa.length) ? _wa.map(arow).join('') + _gb.map(row).join('') + _ol.map(orow).join('') + srcLine(st, _gb.length) : noResHtml(o) + srcLine(st, 0);
+  }catch(e){ box.innerHTML = `<div class="note">${e && e.message === 'limit' ? t('gbLimitAll') : t('srcError')}</div>` + srcLine(st, 0); }
   finally{ btn.disabled = false; }
+}
+function srcLine(st, n){   // quali fonti hanno risposto, e perché qualcuna no
+  const s = k => st[k] === 'ok' ? '✓' : st[k] === 'limit' ? '⚠️' : st[k] === 'none' ? '—' : '✗';
+  let h = `<p class="note src-line">${esc(t('srcLine', { gb: s('gb'), ol: s('ol'), ix: s('ix') }))}</p>`;
+  if(st.gb === 'limit') h += `<p class="note src-line">${esc(gbKey() ? t('gbLimitKey') : t('gbLimit'))}</p>`;
+  else if(st.gb === 'down') h += `<p class="note src-line">${esc(t('gbDown'))}</p>`;
+  return h;
 }
 let _wa = [];
 function noResHtml(o){
@@ -969,6 +1089,11 @@ $('plotTr').addEventListener('click', async ()=>{   // traduzione sul dispositiv
     cur.trama = await tr.translate(txt); cur.tramaSrc = (cur.tramaSrc ? cur.tramaSrc + ' · ' : '') + 'traduzione automatica'; fillForm();
   }catch(e){ toast('Traduzione non riuscita su questo browser'); } });
 $('findBtn').addEventListener('click', runFind);
+$('tGbKey').addEventListener('click', ()=>{
+  const v = window.prompt(t('gbKeyPrompt'), gbKey()); if(v === null) return;
+  try{ if(v.trim()) localStorage.setItem('mpmlb_gbkey', v.trim()); else localStorage.removeItem('mpmlb_gbkey'); }catch(e){}
+  _gbCool = 0; toast(v.trim() ? t('gbKeySaved') : t('gbKeyRemoved'));
+});
 try{ $('sIt').checked = localStorage.getItem('mpmlb_it') !== '0'; }catch(e){}
 $('sIt').addEventListener('change', ()=>{ try{ localStorage.setItem('mpmlb_it', $('sIt').checked ? '1' : '0'); }catch(e){} });
 $('sItL').textContent = LANG === 'en' ? 'Italian books only' : 'Solo libri in italiano';

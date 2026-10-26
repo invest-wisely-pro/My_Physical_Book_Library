@@ -2,12 +2,14 @@
 //  data/s/N.json.gz  (512 file: ogni ISBN-13 cade in uno solo, N = cifre 4-12 dell'ISBN % 512) -> ISBN di tutto il mondo
 //  data/it-search.json.gz  edizioni italiane per ricerca offline di titolo/autore
 //  data/meta.json
-// Riga indice: [isbn13, titolo, autori "A | B", anno, lingua(it|en|...)]. Node 20+, avviare con --max-old-space-size=6000.
-import { createWriteStream, mkdirSync, writeFileSync } from 'node:fs';
+// Riga indice: [isbn13, titolo, autori "A | B", anno, lingua(it|en|...), editore].
+// Italiana = lingua italiana OPPURE ISBN italiano (978-88, 979-12): Open Library spesso non indica la lingua. Node 20+, avviare con --max-old-space-size=6000.
+import { createReadStream, createWriteStream, mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { createGunzip, gzipSync } from 'node:zlib';
 import { createInterface } from 'node:readline';
-const BASE = 'https://openlibrary.org/data/', SHARDS = 512, MAX_INTL = +process.env.MAX_INTL || 3000000, MAX_IT_SEARCH = 400000;
+const BASE = 'https://openlibrary.org/data/', SHARDS = 512, MAX_INTL = +process.env.MAX_INTL || 4000000, MAX_IT_SEARCH = +process.env.MAX_IT_SEARCH || 600000, LOCAL = process.env.OL_LOCAL_DIR || '';
 const UA = { 'User-Agent': 'MyPhysicalBookLibrary-indexer/2.0 (GitHub Actions; personal library app)' };
 const L = { ita: 'it', eng: 'en', fre: 'fr', fra: 'fr', ger: 'de', deu: 'de', spa: 'es', por: 'pt', lat: 'la', rus: 'ru', jpn: 'ja', dut: 'nl', swe: 'sv', gre: 'el' };
 function ok13(i){ if(!/^97[89]\d{10}$/.test(i)) return false; let s = 0; for(let k = 0; k < 12; k++) s += +i[k] * (k % 2 ? 3 : 1); return (10 - s % 10) % 10 === +i[12]; }
@@ -15,8 +17,10 @@ function to13(raw){ const d = String(raw || '').replace(/[^0-9Xx]/g, '').toUpper
   if(d.length === 13) return ok13(d) ? d : '';
   if(d.length === 10 && /^\d{9}[\dX]$/.test(d)){ const b = '978' + d.slice(0, 9); let s = 0; for(let k = 0; k < 12; k++) s += +b[k] * (k % 2 ? 3 : 1); return b + ((10 - s % 10) % 10); } return ''; }
 async function* lines(name){
-  const r = await fetch(BASE + name, { headers: UA, redirect: 'follow' }); if(!r.ok) throw new Error(name + ' http ' + r.status);
-  const rl = createInterface({ input: Readable.fromWeb(r.body).pipe(createGunzip()), crlfDelay: Infinity });
+  let src;
+  if(LOCAL) src = createReadStream(join(LOCAL, name));   // collaudo con un archivio di prova
+  else{ const r = await fetch(BASE + name, { headers: UA, redirect: 'follow' }); if(!r.ok) throw new Error(name + ' http ' + r.status); src = Readable.fromWeb(r.body); }
+  const rl = createInterface({ input: src.pipe(createGunzip()), crlfDelay: Infinity });
   for await (const l of rl) yield l;
 }
 // 1) autori: chiave -> nome
@@ -34,13 +38,15 @@ for await (const l of lines('ol_dump_editions_latest.txt.gz')){
   const t = l.split('\t'); let j; try{ j = JSON.parse(t[4]); }catch(e){ continue; }
   const title = j.title && String(j.title).trim(); if(!title) continue;
   const isbn = to13((j.isbn_13 || [])[0] || (j.isbn_10 || [])[0]); if(!isbn) continue;
-  const lang = L[String(((j.languages || [])[0] || {}).key || '').slice(11)] || '';
+  const lang0 = L[String(((j.languages || [])[0] || {}).key || '').slice(11)] || '';
+  const itIsbn = /^97(888|912)/.test(isbn), isIt = lang0 === 'it' || (itIsbn && (!lang0 || lang0 === 'it'));
+  const lang = isIt ? 'it' : lang0, pub = String((j.publishers || [])[0] || '').trim().slice(0, 60);
   const au = (j.authors || []).map(a => authors.get(String(a.key || '').slice(9))).filter(Boolean).slice(0, 3).join(' | ');
   const year = (String(j.publish_date || '').match(/\d{4}/) || [''])[0];
-  const row = [isbn, (j.subtitle ? title + ': ' + j.subtitle : title).slice(0, 140), au, year, lang];
+  const row = [isbn, (j.subtitle ? title + ': ' + j.subtitle : title).slice(0, 140), au, year, lang, pub];
   const s = shards[parseInt(isbn.slice(3, 12), 10) % SHARDS];
-  if(lang === 'it'){ if(!s.has(isbn)) itn++; s.set(isbn, row); it.set(isbn, row); }
-  else if(intl < MAX_INTL && !s.has(isbn)){ s.set(isbn, row); intl++; }   // estere: tutte finché c'è spazio (priorità a quelle con autore)
+  if(isIt){ if(!s.has(isbn)) itn++; s.set(isbn, row); it.set(isbn, row); }
+  else if(au && intl < MAX_INTL && !s.has(isbn)){ s.set(isbn, row); intl++; }   // estere: solo con autore, finché c'è spazio
 }
 mkdirSync('data/s', { recursive: true });
 let total = 0;
