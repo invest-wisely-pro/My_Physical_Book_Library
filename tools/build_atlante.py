@@ -62,7 +62,7 @@ def ask(q, tries=3):
                 errors.append(f'{name}: risposta senza risultati')
             except Exception as e:
                 errors.append(f'{name}: {e}'); time.sleep(4 * (k + 1))
-    raise RuntimeError(' | '.join(errors[-3:]))
+    raise RuntimeError(' | '.join(errors[:2] + errors[-2:]))
 
 
 qid = lambda b, k: (b.get(k, {}).get('value', '').rsplit('/', 1)[-1]) if b.get(k) else ''
@@ -77,7 +77,11 @@ def many(ids, body, sel='?w ?v', n=350, ask=ask):
     """Stessa richiesta per tanti elementi, a pezzi (VALUES)."""
     out = []
     for part in chunks(ids, n):
-        out += ask(f'SELECT {sel} WHERE {{ VALUES ?w {{ {" ".join("wd:" + x for x in part)} }} {body} }}')
+        q = f'SELECT {sel} WHERE {{ VALUES ?w {{ {" ".join("wd:" + x for x in part)} }} {body} }}'
+        try: out += ask(q)
+        except Exception as e:   # riprova a metà, poi lascia stare quel pezzo
+            if len(part) > 60: out += many(part, body, sel, max(30, len(part) // 3), ask)
+            else: print(f'  (un gruppo di {len(part)} non ha risposto: {str(e)[:120]})')
     return out
 
 
@@ -88,9 +92,12 @@ def build(ask=ask, cover=None, old=None, log=print):
     for b in ask(f'SELECT ?w (MAX(?s) AS ?sl) WHERE {{ VALUES ?c {{ {CLASSES} }} ?w wdt:P31 ?c ; wdt:P50 ?a ; wikibase:sitelinks ?s . FILTER(?s >= {MIN_SL}) }} GROUP BY ?w'):
         sl[qid(b, 'w')] = int(float(val(b, 'sl') or 0))
     log(f'  opere note: {len(sl)}')
-    it_cand = {}
-    for b in ask(f'SELECT ?w (MAX(?s) AS ?sl) WHERE {{ VALUES ?c {{ {CLASSES} }} ?w wdt:P31 ?c ; wdt:P50 ?a ; wikibase:sitelinks ?s . {{ ?w wdt:P495 wd:Q38 }} UNION {{ ?w wdt:P407 wd:Q652 . ?a wdt:P27 wd:Q38 }} FILTER(?s >= {MIN_SL_IT}) }} GROUP BY ?w'):
-        it_cand[qid(b, 'w')] = int(float(val(b, 'sl') or 0))
+    it_cand = {}   # due richieste semplici (una sola con UNION era troppo pesante): paese Italia, oppure autore italiano
+    for name, cond in (('paese Italia', '?w wdt:P495 wd:Q38 .'), ('autore italiano', '?a wdt:P27 wd:Q38 .')):
+        try:
+            for b in ask(f'SELECT ?w (MAX(?s) AS ?sl) WHERE {{ VALUES ?c {{ {CLASSES} }} ?w wdt:P31 ?c ; wdt:P50 ?a ; wikibase:sitelinks ?s . {cond} FILTER(?s >= {MIN_SL_IT}) }} GROUP BY ?w'):
+                it_cand[qid(b, 'w')] = int(float(val(b, 'sl') or 0))
+        except Exception as e: log(f'  opere italiane ({name}): {e}')
     log(f'  opere italiane: {len(it_cand)}')
     # 2) premi: si cerca il premio per nome (quello davvero usato), poi i vincitori con l'anno
     aw_ids, awards = {}, {}
@@ -100,9 +107,11 @@ def build(ask=ask, cover=None, old=None, log=print):
             if r: aw_ids[qid(r[0], 'a')] = code
         except Exception as e: log(f'  premio {name}: {e}')
     if aw_ids:
+      try:
         for b in ask(f'SELECT ?w ?a ?d WHERE {{ VALUES ?a {{ {" ".join("wd:" + x for x in aw_ids)} }} ?w p:P166 ?st . ?st ps:P166 ?a . OPTIONAL {{ ?st pq:P585 ?d }} }}'):
             w, code, y = qid(b, 'w'), aw_ids.get(qid(b, 'a')), val(b, 'd')[:4]
             if w and code: awards.setdefault(w, set()).add(code + (y if re.match(r'^\d{4}$', y) else ''))
+      except Exception as e: log(f'  vincitori dei premi: {e}')
     log(f'  premi trovati: {len(aw_ids)} su {len(AWARDS)}, opere premiate: {len(awards)}')
     # 3) scelta: le più note, le italiane, le premiate
     pick = sorted(sl, key=lambda w: -sl[w])[:MAX_WORKS * 2]
