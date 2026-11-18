@@ -500,7 +500,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
    Fonti: Google Books (edizioni, trame; senza chiave) e Open Library
    (edizioni, opere, copertine; libera). Tutto resta sul dispositivo.
    ===================================================================== */
-const APP_VERSION = 'books-2026-11-18';
+const APP_VERSION = 'books-2026-11-18b';
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r=>setTimeout(r, ms));
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
@@ -740,7 +740,7 @@ async function wdItTitle(o){   // "The Catcher in the Rye" → "Il giovane Holde
 
 /* ---------- OPAC SBN: il catalogo delle biblioteche italiane (quasi tutti i libri italiani). Gateway JSON dell'app ufficiale, senza chiavi.
    Se il browser lo blocca (CORS) l'app se ne accorge e per questa sessione non lo richiama più. ---------- */
-let _sbnOff = false;
+let _sbnOff = false, _sbnMs = 16000;
 const SBN = 'https://opac.sbn.it/opacmobilegw/';
 const sbnClean = s => String(s || '').replace(/[\u0080-\u009f\u0098\u009c]/g, '').replace(/\s*\[[^\]]*\]\s*/g, ' ').replace(/\s+/g, ' ').trim();
 const sbnArr = v => Array.isArray(v) ? v : v == null ? [] : [v];
@@ -762,7 +762,7 @@ function sbnItem(r){
 }
 async function sbnGet(q){
   if(_sbnOff) throw new Error('cors');
-  try{ const j = await jget(SBN + q, 7000); return sbnArr(j && j.briefRecords).map(sbnItem).filter(x=>x && x.title); }
+  try{ const j = await jget(SBN + q, _sbnMs); return sbnArr(j && j.briefRecords).map(sbnItem).filter(x=>x && x.title); }
   catch(e){ if(e && e.name === 'TypeError') _sbnOff = true; throw e; }   // TypeError = bloccato dal browser
 }
 const sbnIsbn = isbn => sbnGet(`search.json?isbn=${isbn}&type=0&start=0&rows=5`).then(l=>l.map(x=>Object.assign(x, { isbn: x.isbn || isbn })));
@@ -771,7 +771,7 @@ const sbnFind = o => sbnGet(`search.json?any=${encodeURIComponent([o.title, o.au
 /* ---------- Copertine: più strade, provate in ordine; un'immagine vale solo se è vera (non il riquadro vuoto) ---------- */
 function probeImg(u, min){ return new Promise(res=>{ if(!u) return res(''); const im = new Image(), tm = setTimeout(()=>res(''), 6000);
   im.onload = () => { clearTimeout(tm); res(im.naturalWidth > (min || 20) && im.naturalHeight > (min || 20) ? u : ''); }; im.onerror = () => { clearTimeout(tm); res(''); }; im.referrerPolicy = 'no-referrer'; im.src = u; }); }
-async function grCover(isbn){ try{ const j = await jget(`https://bookcover.longitood.com/bookcover/${isbn}`, 6000); const u = j && j.url; return u && !/nophoto|no-cover/i.test(u) ? probeImg(u) : ''; }catch(e){ return ''; } }
+async function grCover(isbn){ try{ const j = await jget(`https://bookcover.longitood.com/bookcover/${isbn}`, 12000); const u = j && j.url; return u && !/nophoto|no-cover/i.test(u) ? probeImg(u) : ''; }catch(e){ return ''; } }
 async function findCover(isbn, extra){
   isbn = toIsbn13(isbn || ''); const cands = [].concat(extra || []).filter(Boolean);
   for(const u of cands){ const ok = await probeImg(u); if(ok) return ok; }
@@ -826,8 +826,10 @@ function translatorFrom(s){ const m = String(s || '').match(/(?:trad(?:uzione|ot
 function physFormat(s){ s = String(s || '').toLowerCase(); if(/hard|rileg|cartonat/.test(s)) return 'rilegato'; if(/mass market|pocket|tascab/.test(s)) return 'tascabile'; if(/paper|bross|soft/.test(s)) return 'brossura'; if(/box|cofanett/.test(s)) return 'cofanetto'; return s ? 'altro' : ''; }
 async function lookupIsbn(isbn, seed){ const x = await lookupIsbnCore(isbn, seed); return x && !x._empty ? lookupIsbnFinish(x) : x; }
 async function lookupIsbnCore(isbn, seed){
-  const [g, e, o, xr, bkr, sr] = await Promise.allSettled([gbSearch({ isbn }), olEdition(isbn), olSearch({ isbn }), idxLookup(isbn), olBooksApi(isbn), sbnIsbn(isbn)]);
-  const ixv = xr.status === 'fulfilled' ? xr.value : null, sb = sr.status === 'fulfilled' ? (sr.value[0] || null) : null;
+  let sbDone = null; const sbP = sbnIsbn(isbn).then(l=>(sbDone = l[0] || null), ()=>(sbDone = null));   // le biblioteche rispondono piano: non le aspettiamo se le altre fonti hanno già il libro
+  const [g, e, o, xr, bkr] = await Promise.allSettled([gbSearch({ isbn }), olEdition(isbn), olSearch({ isbn }), idxLookup(isbn), olBooksApi(isbn)]);
+  const ixv = xr.status === 'fulfilled' ? xr.value : null, found = (g.status === 'fulfilled' && g.value[0]) || (e.status === 'fulfilled' && e.value) || (o.status === 'fulfilled' && o.value[0]) || ixv || seed;
+  if(!found) await sbP; const sb = sbDone, sbLater = sb ? null : sbP;
   if(g.status === 'rejected' && e.status === 'rejected' && o.status === 'rejected' && !ixv && !sb) throw new Error('src');
   const gb = seed || (g.status === 'fulfilled' && g.value[0]) || sb || ixv || null, ed = e.status === 'fulfilled' ? e.value : null, ol = o.status === 'fulfilled' ? (o.value[0] || null) : null;
   if(!gb && !ed && !ol && !sb) return { isbn, _empty: true };
@@ -853,12 +855,16 @@ async function lookupIsbnCore(isbn, seed){
   x.gbId = gb && gb.src === 'gb' ? gb.id : '';
   if(sb){ ['editore', 'anno', 'pagine'].forEach((k, i)=>{ if(!x[k]) x[k] = [sb.publisher, sb.year, sb.pages][i]; }); if(!x.autori && sb.authors.length) x.autori = sb.authors.join(', ');
     if(!x.traduttore && sb.translator) x.traduttore = sb.translator; if(!x.collana && sb.series) x.collana = sb.series; if(!x.lingua && sb.lang) x.lingua = langName(sb.lang); }
-  Object.defineProperty(x, '__c', { value: { isbn, ed, bk: bkr.status === 'fulfilled' ? bkr.value : null, covs: [sb && sb.cover] }, enumerable: false, configurable: true });
+  Object.defineProperty(x, '__c', { value: { isbn, ed, bk: bkr.status === 'fulfilled' ? bkr.value : null, covs: [sb && sb.cover], sbLater }, enumerable: false, configurable: true });
   return x;
 }
 async function lookupIsbnFinish(x){   // seconda fase, mentre la scheda è già compilata: trama, generi, titolo originale, copertina
   const c = x.__c || { isbn: x.isbn }; delete x.__c;
-  try{ x = await enrich(x, c); }catch(e){}
+  const [en, sl] = await Promise.allSettled([enrich(x, c), c.sbLater || null]); if(en.status === 'fulfilled' && en.value) x = en.value;
+  const sb = sl.status === 'fulfilled' ? sl.value : null;
+  if(sb){ if(!x.titolo) x.titolo = sb.title; if(!x.autori && sb.authors.length) x.autori = sb.authors.join(', ');
+    [['editore', 'publisher'], ['anno', 'year'], ['pagine', 'pages'], ['traduttore', 'translator'], ['collana', 'series']].forEach(([k, s])=>{ if(!x[k] && sb[s]) x[k] = sb[s]; });
+    if(sb.cover) (c.covs = c.covs || []).push(sb.cover); }
   if(x.titolo && (!x.copertina || !x.trama || !x.editore || !x.pagine)){
     try{ const alt = await gbFind({ title: x.titolo, author: String(x.autori || '').split(',')[0].trim() });
       const same = alt.find(a=>a.isbn === x.isbn);
@@ -1169,7 +1175,7 @@ async function runFind(){
   const track = (name, p) => p.then(v=>{ if(st[name] !== 'ok') st[name] = 'ok'; return v; }, e=>{ if(st[name] !== 'ok') st[name] = why(e); return []; });
   try{
     const olP = olSearch(o).then(r=>(r.length || !onlyIt()) ? r : olSearch(Object.assign({}, o, { anyLang: true })));
-    const [g0, sb, ol, wa, itT] = await Promise.all([track('gb', gbSearch(o)), track('sbn', sbnFind(o)), track('ol', olP), o.author ? wdAuthors(o.author).catch(()=>[]) : Promise.resolve([]), wdItTitle(o).catch(()=>null)]);
+    const [g0, sb, ol, wa, itT] = await Promise.all([track('gb', gbSearch(o)), track('sbn', Promise.race([sbnFind(o), new Promise((_, no)=>setTimeout(()=>no(new Error('slow')), 8000))])), track('ol', olP), o.author ? wdAuthors(o.author).catch(()=>[]) : Promise.resolve([]), wdItTitle(o).catch(()=>null)]);
     _wa = wa; const g = g0.concat(sb);
     const needIx = navigator.onLine === false || g.filter(isItalianItem).length < 4;   // l'indice offline (pesante) solo quando le fonti in rete trovano poco
     const ix = needIx ? await idxSearch(o).catch(()=>[]) : []; st.ix = !IDX ? 'none' : needIx ? 'ok' : 'skip';
@@ -1699,7 +1705,7 @@ async function runHealth(){
     catch(e){ if(/http429/.test(String(e.message))) return { warn: true, det: LANG === 'en' ? 'rate limit (429): the app switches to Open Library and the offline index' : 'limite di richieste (429): l\'app passa a Open Library e all\'indice offline' }; throw e; } }));
   add(await probe('Open Library', async ()=>{ const j = await jget('https://openlibrary.org/search.json?q=dante&limit=1&fields=key'); return { warn: !(j && j.docs), det: t('hcAnswered') }; }));
   add(await probe(t('hcCovers'), async ()=>{ await fetch('https://covers.openlibrary.org/b/id/8231856-S.jpg', { mode: 'no-cors' }); return {}; }));
-  add(await probe(LANG === 'en' ? 'Italian libraries (OPAC SBN)' : 'Biblioteche italiane (OPAC SBN)', async ()=>{ _sbnOff = false; const l = await sbnIsbn('9788804668237'); return { warn: !l.length, det: l.length ? t('hcAnswered') + ' · ' + l[0].title : t('hcAnswered') }; }));
+  add(await probe(LANG === 'en' ? 'Italian libraries (OPAC SBN)' : 'Biblioteche italiane (OPAC SBN)', async ()=>{ _sbnOff = false; const ms = _sbnMs; _sbnMs = 30000; let l; try{ l = await sbnIsbn('9788804668237'); } finally { _sbnMs = ms; } return { warn: !l.length, det: l.length ? t('hcAnswered') + ' · ' + l[0].title : t('hcAnswered') }; }));
   add(await probe(LANG === 'en' ? 'Covers (Goodreads)' : 'Copertine (Goodreads)', async ()=>{ const u = await grCover('9780140449136'); return { warn: !u }; }));
   add(await probe(LANG === 'en' ? 'Covers (Amazon)' : 'Copertine (Amazon)', async ()=>{ const u = await probeImg('https://m.media-amazon.com/images/P/0140449132.01._SCLZZZZZZZ_.jpg'); return { warn: !u }; }));
   add(await probe('Wikidata', async ()=>{ const e = await wdEntities(['Q1067'], 'labels'); return { warn: !e.Q1067 }; }));
