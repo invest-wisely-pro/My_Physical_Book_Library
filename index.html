@@ -66,6 +66,33 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
 
 /* ---------- Libreria: libri con lo spessore delle pagine, segnalibro, taglio dorato ---------- */
 .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(132px, 1fr)); gap:28px 22px;}
+/* Scopri: l'atlante dei libri */
+.at-hero{position:relative; border-radius:18px; overflow:hidden; border:1px solid var(--line); background:var(--leather); margin:6px 0 26px; min-height:250px;}
+.at-slide{position:absolute; inset:0; display:grid; grid-template-columns:150px minmax(0, 1fr); gap:24px; align-items:center; padding:24px 28px; opacity:0; transition:opacity .6s; pointer-events:none; text-align:left; background:none; border:0; color:inherit; cursor:pointer; width:100%;}
+.at-slide.on{opacity:1; pointer-events:auto; position:relative;}
+.at-slide .bg{position:absolute; inset:-30px; background-size:cover; background-position:center; filter:blur(28px) brightness(.35) saturate(1.2); z-index:0;}
+.at-slide > *:not(.bg){position:relative; z-index:1;}
+.at-slide .cover{position:relative; display:block; aspect-ratio:2/3; border-radius:4px; overflow:hidden; box-shadow:0 14px 30px rgba(0,0,0,.5), 6px 6px 0 -2px var(--pages);}
+.at-slide .lab{display:inline-block; font-size:12px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:#1b1a12; background:var(--gold); border-radius:999px; padding:4px 10px; margin-bottom:10px;}
+.at-slide h3{font-family:var(--serif); font-weight:800; font-size:clamp(22px, 3.4vw, 34px); line-height:1.1; margin:0 0 6px;}
+.at-slide p{margin:0; color:var(--paper2);} .at-slide .why{margin-top:10px; color:var(--gold2); font-size:14px;}
+.at-dots{position:absolute; right:16px; bottom:12px; display:flex; gap:6px; z-index:2;} .at-dots button{width:8px; height:8px; border-radius:50%; border:0; background:var(--paper3); opacity:.5; cursor:pointer; padding:0;} .at-dots button.on{opacity:1; background:var(--gold);}
+.at-sec{margin:0 0 24px;} .at-sec h2{font-family:var(--serif); font-weight:800; font-size:20px; margin:0 0 10px; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}
+.at-sec h2 small{font-family:var(--text); font-weight:500; font-size:13px; color:var(--paper3);} .at-sec h2 .more{margin-left:auto; font-family:var(--text); font-size:13.5px; font-weight:600; color:var(--teal); background:none; border:0; cursor:pointer; padding:4px 0;}
+.hc .own{position:absolute; bottom:6px; right:6px; z-index:2; background:var(--gold); color:#1b1a12; font-size:11px; font-weight:700; border-radius:999px; padding:2px 7px;}
+.hc .aw{position:absolute; left:6px; top:6px; max-width:calc(100% - 12px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; z-index:2; background:rgba(0,0,0,.65); color:var(--gold2); font-size:11px; font-weight:700; border-radius:999px; padding:2px 7px;}
+.hc span.y{display:block; color:var(--paper3); font-size:11.5px;}
+.pa{flex:0 0 104px; background:none; border:0; padding:0; cursor:pointer; color:inherit; text-align:center;}
+.pa .ph2{display:block; width:96px; height:96px; margin:0 auto 8px; border-radius:50%; overflow:hidden; background:var(--forest2) center/cover no-repeat; border:2px solid var(--line); display:flex; align-items:center; justify-content:center; font-family:var(--serif); font-size:34px; font-weight:800; color:var(--paper3);}
+.pa b{display:block; font-size:13px; line-height:1.2;} .pa span{display:block; font-size:11.5px; color:var(--paper3);}
+.at-search{display:flex; gap:10px; margin:2px 0 18px;} .at-search input{flex:1; min-width:0; height:42px; padding:0 16px; border-radius:21px; border:1px solid var(--line); background:var(--forest); color:var(--paper);}
+.at-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(118px, 1fr)); gap:22px 16px; margin-top:12px;} .at-grid .hc{flex-basis:auto;}
+.at-tabs{display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 0;} .at-tabs button{height:34px; padding:0 14px; border-radius:17px; border:1px solid var(--line); background:var(--forest2); color:var(--paper2); font-weight:600; font-size:13.5px; cursor:pointer;} .at-tabs button[aria-pressed="true"]{background:var(--gold); border-color:var(--gold); color:#1b1a12;}
+.at-note{border:1px dashed var(--line); border-radius:14px; padding:18px; color:var(--paper2);}
+.wk-head{display:grid; grid-template-columns:130px minmax(0, 1fr); gap:18px; align-items:start;} .wk-head .cover{position:relative; display:block; aspect-ratio:2/3; border-radius:4px; overflow:hidden; box-shadow:6px 6px 0 -2px var(--pages);}
+.wk-head h2{margin-right:40px;} .wk-head .sub{color:var(--paper2); margin:0 0 8px;} .wk-head .sub button{background:none; border:0; padding:0; color:var(--teal); font:inherit; cursor:pointer; text-decoration:underline; text-underline-offset:3px;}
+.wk-plot{margin:16px 0 0; line-height:1.55; color:var(--paper);} .wk-acts{display:flex; flex-wrap:wrap; gap:10px; margin:16px 0 4px;}
+@media (max-width:640px){ .at-sec h2 small{display:none;} .hc .aw{font-size:10px; padding:2px 6px;} .tab{font-size:13.5px !important; letter-spacing:-.01em;} .at-slide{grid-template-columns:104px minmax(0, 1fr); gap:16px; padding:18px;} .at-hero{min-height:200px;} .wk-head{grid-template-columns:100px minmax(0, 1fr); gap:14px;} .pa{flex-basis:92px;} .pa .ph2{width:84px; height:84px;} .at-grid{grid-template-columns:repeat(3, minmax(0, 1fr)); gap:18px 10px;} }
 /* file in alto nella libreria (come negli altri Atlanti) */
 #shelfTop .hsec{margin:4px 0 22px;}
 #shelfTop h2{font-family:var(--serif); font-weight:800; font-size:20px; margin:0 0 10px; display:flex; align-items:baseline; gap:10px;}
@@ -269,6 +296,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
   </div>
   <nav class="tabs" role="tablist">
     <button class="tab" role="tab" data-tab="shelf" aria-selected="true" data-i18n="tabShelf">Libreria</button>
+    <button class="tab" role="tab" data-tab="scopri" aria-selected="false">Scopri</button>
     <button class="tab" role="tab" data-tab="reading" aria-selected="false" data-i18n="tabReading">Lettura</button>
     <button class="tab" role="tab" data-tab="people" aria-selected="false" data-i18n="tabPeople">Persone</button>
     <button class="tab" role="tab" data-tab="stats" aria-selected="false" data-i18n="tabStats">Statistiche</button>
@@ -296,6 +324,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
     <div class="count" id="count"></div>
     <div class="grid" id="grid"></div>
   </section>
+  <section class="view" id="v-scopri"><div id="atBody"></div></section>
   <section class="view" id="v-reading"><div id="readBody"></div></section>
   <section class="view" id="v-people">
     <div class="bar"><input type="search" id="pq" data-i18n-ph="peoplePh" data-i18n-aria="peoplePh" placeholder="Cerca una persona…" autocomplete="off"></div>
@@ -447,6 +476,17 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
   </div>
 </div>
 
+<div class="ov" id="atOv" role="dialog" aria-modal="true" aria-labelledby="atT">
+  <div class="sheet">
+    <button class="x" data-close aria-label="Chiudi">×</button>
+    <div id="atHead"></div>
+    <div class="at-tabs" id="atTabs"></div>
+    <div class="at-grid" id="atGrid"></div>
+  </div>
+</div>
+<div class="ov" id="wkOv" role="dialog" aria-modal="true" aria-labelledby="wkT">
+  <div class="sheet narrow" id="wkBody"></div>
+</div>
 <div class="ov" id="personOv" role="dialog" aria-modal="true" aria-labelledby="pTitle">
   <div class="sheet narrow">
     <button class="x" data-close aria-label="Chiudi">×</button>
@@ -501,7 +541,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
    Fonti: Google Books (edizioni, trame; senza chiave) e Open Library
    (edizioni, opere, copertine; libera). Tutto resta sul dispositivo.
    ===================================================================== */
-const APP_VERSION = 'books-2026-11-18d';
+const APP_VERSION = 'books-2026-11-18e';
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r=>setTimeout(r, ms));
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
@@ -1327,8 +1367,8 @@ function renderStats(){
 /* ---------- Schede ---------- */
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected', b.dataset.tab === name ? 'true' : 'false'));
-  ['shelf', 'reading', 'people', 'stats'].forEach(v=>$('v-' + v).classList.toggle('on', v === name));
-  if(name === 'reading') renderReading(); if(name === 'people') renderPeople(); if(name === 'stats') renderStats();
+  ['shelf', 'scopri', 'reading', 'people', 'stats'].forEach(v=>$('v-' + v).classList.toggle('on', v === name));
+  if(name === 'scopri') renderAtlas(); if(name === 'reading') renderReading(); if(name === 'people') renderPeople(); if(name === 'stats') renderStats();
   try{ history.replaceState(null, '', name === 'shelf' ? location.pathname + location.search : '#' + name); }catch(e){}
 }
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click', ()=>switchTab(b.dataset.tab)));
@@ -1746,7 +1786,7 @@ $('tHealth').addEventListener('click', ()=>{ closeOv('toolsOv'); openOv('hcOv');
 $('hcOv').addEventListener('click', async e=>{ if(e.target.closest('#hcAgain')){ runHealth(); return; } if(e.target.closest('#hcCopy')){ try{ await navigator.clipboard.writeText($('hcBody').dataset.report || ''); toast(t('copied')); }catch(err){} } });
 
 /* ---------- 🔄 Guida indice offline (workflow GitHub) ---------- */
-const WF_YAML = ["name: Indice libri e pubblicazione", "on:", "  push: { branches: [main] }", "  schedule: [{ cron: '17 4 1 * *' }]     # il 1° di ogni mese ricostruisce l'indice", "  workflow_dispatch:", "    inputs:", "      rebuild: { description: 'Ricostruire l indice da Open Library (true/false)', default: 'true' }", "permissions: { contents: write, pages: write, id-token: write }", "concurrency: { group: site, cancel-in-progress: false }", "jobs:", "  data:", "    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.rebuild == 'true')", "    runs-on: ubuntu-latest", "    timeout-minutes: 300", "    steps:", "      - uses: actions/checkout@v4", "      - uses: actions/setup-node@v4", "        with: { node-version: 20 }", "      - run: node --max-old-space-size=6000 scripts/build-dump.mjs", "      - name: Salva l'indice sul ramo data-store (senza far crescere la cronologia)", "        run: |", "          cd data && git init -q -b data-store && git config user.name indice-bot && git config user.email actions@users.noreply.github.com", "          git add -A && git commit -qm \"indice $(date -u +%F)\" && git push -f \"https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git\" data-store", "  deploy:", "    needs: data", "    if: always() && !cancelled()", "    runs-on: ubuntu-latest", "    environment: { name: github-pages, url: '${{ steps.d.outputs.page_url }}' }", "    steps:", "      - uses: actions/checkout@v4", "      - uses: actions/checkout@v4", "        with: { ref: data-store, path: _ds }", "        continue-on-error: true", "      - run: |", "          sed -i \"s/const VERSION = '[^']*'/const VERSION = 'mpmlb-${GITHUB_SHA::7}'/\" sw.js", "          mkdir -p _site && cp -r index.html sw.js manifest.webmanifest icons _site/", "          [ -d _ds ] && mkdir -p _site/data && cp -r _ds/s _ds/*.gz _ds/meta.json _site/data/ 2>/dev/null || true", "          touch _site/.nojekyll", "      - uses: actions/upload-pages-artifact@v3", "        with: { path: _site }", "      - id: d", "        uses: actions/deploy-pages@v4"].join('\n') + '\n';
+const WF_YAML = ["name: Indice libri e pubblicazione", "on:", "  push: { branches: [main] }", "  schedule:", "    - cron: '17 4 1 * *'     # il 1° di ogni mese ricostruisce l'indice degli ISBN", "    - cron: '41 3 * * 2'     # ogni martedì aggiorna l'atlante (libri da scoprire, premi, autori)", "  workflow_dispatch:", "    inputs:", "      rebuild: { description: 'Ricostruire l indice degli ISBN da Open Library, richiede ore (true/false)', default: 'false' }", "      atlas: { description: 'Aggiornare l atlante dei libri da scoprire, circa mezz ora (true/false)', default: 'true' }", "permissions: { contents: write, pages: write, id-token: write }", "concurrency: { group: site, cancel-in-progress: false }", "jobs:", "  data:", "    if: (github.event_name == 'schedule' && github.event.schedule == '17 4 1 * *') || (github.event_name == 'workflow_dispatch' && inputs.rebuild == 'true')", "    runs-on: ubuntu-latest", "    timeout-minutes: 300", "    steps:", "      - uses: actions/checkout@v4", "      - uses: actions/setup-node@v4", "        with: { node-version: 20 }", "      - run: node --max-old-space-size=6000 scripts/build-dump.mjs", "      - name: Salva l'indice sul ramo data-store (senza far crescere la cronologia)", "        run: |", "          curl -sfL \"https://raw.githubusercontent.com/${{ github.repository }}/data-store/atlante.json.gz\" -o data/atlante.json.gz || true   # l'atlante resta", "          cd data && git init -q -b data-store && git config user.name indice-bot && git config user.email actions@users.noreply.github.com", "          git add -A && git commit -qm \"indice $(date -u +%F)\" && git push -f \"https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git\" data-store", "  atlas:", "    needs: data", "    if: always() && !cancelled() && ((github.event_name == 'schedule' && github.event.schedule == '41 3 * * 2') || (github.event_name == 'workflow_dispatch' && inputs.atlas == 'true'))", "    runs-on: ubuntu-latest", "    timeout-minutes: 120", "    steps:", "      - uses: actions/checkout@v4", "      - uses: actions/checkout@v4", "        with: { ref: data-store, path: _ds }", "      - uses: actions/setup-python@v5", "        with: { python-version: '3.12' }", "      - run: python tools/build_atlante.py _ds/atlante.json.gz", "      - name: Salva l'atlante sul ramo data-store", "        run: |", "          cd _ds && git config user.name indice-bot && git config user.email actions@users.noreply.github.com", "          git add atlante.json.gz && (git diff --cached --quiet || git commit -qm \"atlante $(date -u +%F)\") && git push", "  deploy:", "    needs: [data, atlas]", "    if: always() && !cancelled()", "    runs-on: ubuntu-latest", "    environment: { name: github-pages, url: '${{ steps.d.outputs.page_url }}' }", "    steps:", "      - uses: actions/checkout@v4", "      - uses: actions/checkout@v4", "        with: { ref: data-store, path: _ds }", "        continue-on-error: true", "      - run: |", "          sed -i \"s/const VERSION = '[^']*'/const VERSION = 'mpmlb-${GITHUB_SHA::7}'/\" sw.js", "          mkdir -p _site && cp -r index.html sw.js manifest.webmanifest icons _site/", "          [ -d _ds ] && mkdir -p _site/data && cp -r _ds/s _ds/*.gz _ds/meta.json _site/data/ 2>/dev/null || true", "          touch _site/.nojekyll", "      - uses: actions/upload-pages-artifact@v3", "        with: { path: _site }", "      - id: d", "        uses: actions/deploy-pages@v4"].join('\n') + '\n';
 function renderIdxGuide(){
   const en = LANG === 'en', n = IDX && IDX.n ? IDX.n : 0, when = IDX && IDX.built ? String(IDX.built).slice(0, 10) : '';
   const state = n ? (en ? `✅ Index active: ${n} books, updated ${when}. It now refreshes itself every month.` : `✅ Indice attivo: ${n} libri, aggiornato il ${when}. Ora si aggiorna da solo ogni mese.`)
@@ -1755,14 +1795,14 @@ function renderIdxGuide(){
     'The repository must contain <b>index.html, sw.js, manifest.webmanifest</b> and the folders <b>icons</b> and <b>scripts</b> (with <code>build-dump.mjs</code>). Upload them with “Add file → Upload files”.',
     'Repository <b>Settings → Pages → Build and deployment → Source: GitHub Actions</b>.',
     '<b>Add file → Create new file</b>, name it exactly <code>.github/workflows/site.yml</code> (typing the slashes creates the folders), paste the workflow (button below) and <b>Commit changes</b>.',
-    'Open <b>Actions → “Indice libri e pubblicazione” → Run workflow</b> (keep rebuild = true). The first run reads Open Library’s monthly dump (~9 GB): it can take 1–3 hours. When it ends the site is published by itself.',
+    'Open <b>Actions → “Indice libri e pubblicazione” → Run workflow</b> (set rebuild = true the first time). The first run reads Open Library’s monthly dump (~9 GB): it can take 1–3 hours. When it ends the site is published by itself.',
     'Check: in the app ⋯ → 🩺 Check services → “Offline index” shows millions of books and the date (reopen the app twice if it shows 0).',
     'Done. From now on: <b>every month</b> the index is rebuilt and published, and <b>every time you change a file</b> the site is updated. Nothing else to do.'
   ] : [
     'Nel repository devono esserci <b>index.html, sw.js, manifest.webmanifest</b> e le cartelle <b>icons</b> e <b>scripts</b> (dentro c\'è <code>build-dump.mjs</code>). Si caricano con “Add file → Upload files”.',
     'Nel repository: <b>Settings → Pages → Build and deployment → Source: GitHub Actions</b>.',
     '<b>Add file → Create new file</b>, chiamalo esattamente <code>.github/workflows/site.yml</code> (scrivendo le barre si creano le cartelle), incolla il workflow (pulsante qui sotto) e premi <b>Commit changes</b>.',
-    'Apri <b>Actions → “Indice libri e pubblicazione” → Run workflow</b> (lascia rebuild = true). La prima volta legge il dump mensile di Open Library (~9 GB): può richiedere da 1 a 3 ore. Alla fine il sito si pubblica da solo.',
+    'Apri <b>Actions → “Indice libri e pubblicazione” → Run workflow</b> (la prima volta metti rebuild = true). La prima volta legge il dump mensile di Open Library (~9 GB): può richiedere da 1 a 3 ore. Alla fine il sito si pubblica da solo.',
     'Verifica: nell\'app ⋯ → 🩺 Verifica servizi → la riga “Indice offline” mostra milioni di libri e la data (se vedi 0, chiudi e riapri l\'app due volte).',
     'Fatto. Da ora: <b>ogni mese</b> l\'indice si ricostruisce e si pubblica, e <b>ogni volta che cambi un file</b> il sito si aggiorna. Non devi fare altro.'];
   const tips = en ? 'If one day it stops: GitHub pauses scheduled workflows after about 60 days with no activity in the repository. Just open Actions and press “Enable” or “Run workflow”. No keys or accounts are needed anywhere.'
@@ -2024,6 +2064,156 @@ document.addEventListener('visibilitychange', ()=>{ if(document.hidden) rdSavePo
 })();
 
 /* ---------- Avvio ---------- */
+
+/* =====================================================================
+   SCOPRI — l'atlante dei libri (data/atlante.json.gz, aggiornato ogni settimana da GitHub Actions con Wikidata e Open Library)
+   ===================================================================== */
+let AT = null, _atP = null, _heroT = null;
+const AW_SHORT = { S: 'Strega', C: 'Campiello', V: 'Viareggio', B: 'Bancarella', G: 'Goncourt', K: 'Booker', P: 'Pulitzer', H: 'Hugo', N: 'Nebula', F: 'Flaiano', E: 'Edgar', I: 'International Booker', A: 'National Book Award', L: 'Campiello Giovani' };
+const GEN_NAMES = { giallo: 'Gialli', thriller: 'Thriller', fantascienza: 'Fantascienza e distopie', fantasy: 'Fantasy', horror: 'Horror e gotico', storico: 'Romanzi storici', avventura: 'Avventura', formazione: 'Romanzi di formazione', ragazzi: 'Per ragazzi', amore: 'Storie d\'amore', umorismo: 'Umorismo e satira', guerra: 'Guerra', filosofico: 'Romanzi di idee', biografia: 'Biografie e memorie', poesia: 'Poesia', teatro: 'Teatro', saggio: 'Saggi', fumetto: 'Fumetti e graphic novel' };
+function loadAtlas(){
+  if(!_atP) _atP = gzJson('data/atlante.json.gz').then(j=>{
+    if(!j || !Array.isArray(j.w)) return null;
+    const A = (j.a || []).map(a=>({ q: a[0], name: a[1], nob: a[2], img: a[3], it: !!a[4], b: a[5], works: [] }));
+    const W = j.w.map(r=>{ const w = { q: r[0], t: r[1], o: r[2], a: (r[3] || []).map(i=>A[i]).filter(Boolean), y: parseInt(r[4], 10) || 0, s: r[5] || 0, it: !!r[6], g: r[7] ? r[7].split(',') : [], aw: r[8] ? r[8].split(',').map(x=>({ c: x[0], y: parseInt(x.slice(1), 10) || 0 })) : [], cov: r[9] || 0, isbn: r[10] || '', iw: r[11] || '', k: r[12] || '' }; w.a.forEach(a=>a.works.push(w)); return w; });
+    AT = { Y: j.Y || new Date().getFullYear(), built: j.built, W, A, byQ: new Map(W.map(w=>[w.q, w])), byA: new Map(A.map(a=>[a.q, a])) }; return AT;
+  }).catch(()=>null);
+  return _atP;
+}
+const atDay = () => Math.floor((Date.now() + 36e5) / 864e5);
+const atMix = (l, salt) => l.map(w=>[(hash((w.q || '') + ':' + (salt || '')) + atDay() * 2654435761) % 1000003, w]).sort((a, b)=>a[0] - b[0]).map(x=>x[1]);
+const atCov = (w, big) => w.cov ? `https://covers.openlibrary.org/b/id/${w.cov}-${big ? 'L' : 'M'}.jpg` : '';
+const atAu = w => w.a.map(a=>a.name).join(', ');
+function atOwnedIdx(){ const m = new Map(); books.forEach(b=>{ const k = nrm(b.titolo); if(k) m.set(k, (m.get(k) || []).concat([b])); if(b.titoloOrig){ const k2 = nrm(b.titoloOrig); m.set(k2, (m.get(k2) || []).concat([b])); } }); return m; }
+let _own = null;
+function atOwned(w){ if(!_own) _own = atOwnedIdx(); const ln = w.a[0] ? lastName(w.a[0].name) : ''; for(const k of [nrm(w.t), nrm(w.o)]){ if(!k) continue; const l = _own.get(k); const b = l && l.find(b=>!ln || nrm(b.autori).includes(ln)); if(b) return b; } return null; }
+function atCard(w, why){
+  const b = atOwned(w), aw = w.aw.slice().sort((x, y)=>y.y - x.y)[0];
+  const cv = { titolo: w.t, autori: atAu(w), copertina: atCov(w) };
+  return `<button type="button" class="hc" data-wk="${esc(w.q)}">${coverHTML(cv).replace('<span class="cover">', `<span class="cover">${b ? `<span class="own">${b.lista === 'wishlist' ? '💭' : '✓'}</span>` : ''}${aw ? `<span class="aw">🏆 ${esc(AW_SHORT[aw.c] || '')}${aw.y ? ' ' + aw.y : ''}</span>` : ''}`)}<b>${esc(w.t)}</b><span class="a">${esc(atAu(w))}</span><span class="y">${esc(why || (w.y ? (w.y < 0 ? -w.y + ' a.C.' : String(w.y)) : ''))}</span></button>`;
+}
+function atPortrait(a){ const img = a.img ? `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(a.img)}?width=220` : '';
+  return `<button type="button" class="pa" data-au="${esc(a.q)}"><span class="ph2" ${img ? `style="background-image:url('${esc(img)}')"` : ''}>${img ? '' : esc((a.name || '?')[0])}</span><b>${esc(a.name)}</b><span>${esc(a.nob ? 'Nobel ' + (a.nob.length === 4 ? a.nob : '') : (a.b || ''))}</span></button>`; }
+const AT_LISTS = {};
+function atRow(key, title, sub, list, n, why){
+  if(!list.length) return ''; AT_LISTS[key] = { title, sub, list };
+  const show = list.slice(0, n || 24);
+  return `<section class="at-sec"><h2>${esc(title)}${sub ? `<small>${esc(sub)}</small>` : ''}${list.length > show.length ? `<button type="button" class="more" data-atl="${esc(key)}">Vedi tutti (${list.length})</button>` : ''}</h2><div class="hrow">${show.map(w=>atCard(w, why && why(w))).join('')}</div></section>`;
+}
+function atLists(){
+  const W = AT.W, Y = AT.Y, day = atDay();
+  const top = W.slice().sort((a, b)=>b.s - a.s);
+  const awd = (codes, from) => W.filter(w=>w.aw.some(a=>codes.includes(a.c) && (!from || a.y >= from))).sort((a, b)=>Math.max(...b.aw.filter(x=>codes.includes(x.c)).map(x=>x.y)) - Math.max(...a.aw.filter(x=>codes.includes(x.c)).map(x=>x.y)) || b.s - a.s);
+  const awY = (w, codes) => { const a = w.aw.filter(x=>codes.includes(x.c)).sort((x, y)=>y.y - x.y)[0]; return a ? `${AW_SHORT[a.c]}${a.y ? ' ' + a.y : ''}` : ''; };
+  const ita = top.filter(w=>w.it);
+  return { top, ita, awd, awY, recent: awd(['S', 'C', 'V', 'K', 'P', 'G', 'I', 'A', 'B', 'F', 'H', 'N', 'E', 'L'], Y - 4) };
+}
+function atHero(){
+  const L = atLists(), used = new Set(), take = (l, lab, why) => { const w = atMix(l.filter(w=>!used.has(w.q) && w.cov), lab)[0] || atMix(l.filter(w=>!used.has(w.q)), lab)[0]; if(w){ used.add(w.q); return { w, lab, why }; } return null; };
+  const s = [take(L.top.slice(0, 200), 'Un capolavoro', w=>`Conosciuto in tutto il mondo: ne parlano ${w.s} Wikipedia`),
+    take(L.recent.slice(0, 40), 'Premiato di recente', w=>'🏆 ' + L.awY(w, ['S', 'C', 'V', 'K', 'P', 'G', 'I', 'A', 'B', 'F', 'H', 'N', 'E', 'L'])),
+    take(L.ita.slice(0, 300), 'Letteratura italiana', w=>w.y ? `Del ${w.y}` : '')].filter(Boolean);
+  if(!s.length) return '';
+  return `<div class="at-hero" id="atHero">${s.map((x, i)=>{ const cv = atCov(x.w, true);
+    return `<button type="button" class="at-slide${i ? '' : ' on'}" data-wk="${esc(x.w.q)}">${cv ? `<span class="bg" style="background-image:url('${esc(cv)}')"></span>` : ''}${coverHTML({ titolo: x.w.t, autori: atAu(x.w), copertina: cv })}<span><span class="lab">${esc(x.lab)}</span><h3>${esc(x.w.t)}</h3><p>${esc([atAu(x.w), x.w.y > 0 ? x.w.y : ''].filter(Boolean).join(' · '))}</p><p class="why">${esc(x.why(x.w) || '')}</p></span></button>`; }).join('')}<div class="at-dots">${s.map((x, i)=>`<button type="button" data-dot="${i}" class="${i ? '' : 'on'}" aria-label="${i + 1}"></button>`).join('')}</div></div>`;
+}
+function heroGo(i){ const h = $('atHero'); if(!h) return; const sl = h.querySelectorAll('.at-slide'), d = h.querySelectorAll('.at-dots button'); if(!sl.length) return; i = (i + sl.length) % sl.length; sl.forEach((x, k)=>x.classList.toggle('on', k === i)); d.forEach((x, k)=>x.classList.toggle('on', k === i)); h.dataset.i = i; }
+async function renderAtlas(){
+  const box = $('atBody'); if(!box) return;
+  if(!AT){ box.innerHTML = `<p class="note">Apro l'atlante dei libri…</p>`; await loadAtlas(); }
+  if(!AT){ box.innerHTML = `<div class="at-note"><h2 style="font-family:var(--serif);margin:0 0 6px">📚 L'atlante dei libri si sta preparando</h2><p style="margin:0">Qui troverai ogni giorno libri da scoprire: capolavori, premiati, letteratura italiana, generi e autori.</p><p class="note" style="margin:10px 0 0">Per chi gestisce l'app: su GitHub, Actions → "Indice libri e pubblicazione" → Run workflow (le impostazioni proposte vanno bene). Serve circa mezz'ora, poi si aggiorna da solo ogni settimana.</p></div>`; return; }
+  _own = null; const L = atLists(), Y = AT.Y, G = code => L.top.filter(w=>w.g.includes(code));
+  const nob = AT.A.filter(a=>a.nob).sort((a, b)=>(parseInt(b.nob, 10) || 0) - (parseInt(a.nob, 10) || 0));
+  AT_LISTS.__nobel = nob;
+  box.innerHTML = `<div class="at-search"><input type="search" id="atQ" placeholder="Cerca un libro o un autore nell'atlante…" autocomplete="off"></div><div id="atRes"></div><div id="atMain">`
+    + atHero()
+    + atRow('recenti', '🏆 Premiati di recente', `dal ${Y - 4} a oggi`, L.recent, 24, w=>L.awY(w, ['S', 'C', 'V', 'K', 'P', 'G', 'I', 'A', 'B', 'F', 'H', 'N', 'E', 'L']))
+    + atRow('capolavori', '⭐ I capolavori', 'i più conosciuti nel mondo, diversi ogni giorno', atMix(L.top.slice(0, 80), 'cap').concat(L.top.slice(80, 400)), 24)
+    + atRow('italia', '🇮🇹 Letteratura italiana', 'dai classici a oggi', atMix(L.ita.slice(0, 60), 'ita').concat(L.ita.slice(60)), 24).replace('<h2>🇮🇹', '<h2 data-x="it">🇮🇹').replace(/(data-atl="italia">[^<]*<\/button>)/, '$1') 
+    + `<div class="acts" style="margin:-12px 0 24px"><button class="btn" type="button" data-atl="__italia">🇮🇹 Esplora la letteratura italiana: decenni e generi</button></div>`
+    + atRow('strega', '🏅 Premio Strega', 'i vincitori, dal più recente', L.awd(['S']), 24, w=>L.awY(w, ['S']))
+    + atRow('campiello', '🏅 Premio Campiello', '', L.awd(['C']), 24, w=>L.awY(w, ['C']))
+    + atRow('intl', '🌍 Booker, Pulitzer, Goncourt', 'i grandi premi del mondo', L.awd(['K', 'P', 'G', 'I', 'A']), 24, w=>L.awY(w, ['K', 'P', 'G', 'I', 'A']))
+    + (nob.length ? `<section class="at-sec"><h2>🎖️ Scrittori premio Nobel<small>dal più recente</small>${nob.length > 20 ? `<button type="button" class="more" data-atl="__nobel">Vedi tutti (${nob.length})</button>` : ''}</h2><div class="hrow">${nob.slice(0, 20).map(atPortrait).join('')}</div></section>` : '')
+    + atRow('gialli', '🔎 Gialli e thriller', '', L.top.filter(w=>w.g.includes('giallo') || w.g.includes('thriller')), 24)
+    + atRow('fs', '🚀 Fantascienza e distopie', '', G('fantascienza'), 24)
+    + atRow('fantasy', '🐉 Fantasy', '', G('fantasy'), 24)
+    + atRow('storici', '🏛️ Romanzi storici', '', G('storico'), 24)
+    + atRow('avventura', '🧭 Avventura', '', G('avventura'), 24)
+    + atRow('horror', '🕯️ Horror e gotico', '', G('horror'), 24)
+    + atRow('formazione', '🌱 Romanzi di formazione', '', G('formazione'), 24)
+    + atRow('ragazzi', '🧒 Per ragazzi', '', G('ragazzi'), 24)
+    + atRow('amore', '💌 Storie d\'amore', '', G('amore'), 24)
+    + atRow('ottocento', '📜 I classici dell\'Ottocento', '', L.top.filter(w=>w.y >= 1800 && w.y < 1900), 24)
+    + atRow('novecento', '🕰️ Il Novecento', '', L.top.filter(w=>w.y >= 1900 && w.y < 2000), 24)
+    + atRow('oggi', '✨ Dal 2000 a oggi', '', L.top.filter(w=>w.y >= 2000), 24)
+    + atRow('poesia', '🪶 Poesia', '', G('poesia'), 24)
+    + atRow('teatro', '🎭 Teatro', '', G('teatro'), 24)
+    + `<p class="note">Atlante aggiornato il ${esc(fmtWd(AT.built) || AT.built || '')}: ${AT.W.length.toLocaleString(LOCALE())} libri da Wikidata e Open Library. ✓ = è nella tua libreria, 💭 = nei desideri.</p></div>`;
+  clearInterval(_heroT); _heroT = setInterval(()=>{ const h = $('atHero'); if(!h || !$('v-scopri').classList.contains('on') || document.hidden){ return; } if(h.matches(':hover')) return; heroGo((+h.dataset.i || 0) + 1); }, 7000);
+}
+function atSearch(q){
+  const res = $('atRes'), main = $('atMain'); if(!res || !main) return; const n = nrm(q);
+  if(n.length < 2){ res.innerHTML = ''; main.hidden = false; return; }
+  const ws = n.split(' '), hit = AT.W.filter(w=>{ const s = nrm(w.t + ' ' + w.o + ' ' + atAu(w)); return ws.every(x=>s.includes(x)); }).sort((a, b)=>b.s - a.s).slice(0, 60);
+  main.hidden = true; res.innerHTML = hit.length ? `<div class="at-grid">${hit.map(w=>atCard(w)).join('')}</div>` : `<p class="note">Nessun libro dell'atlante corrisponde. Per cercare un'edizione precisa usa "＋ Aggiungi".</p>`;
+}
+function atOpenList(key, tab){
+  let title, sub = '', list, tabs = '';
+  if(key === '__nobel'){ const nob = AT_LISTS.__nobel || []; $('atHead').innerHTML = `<h2 id="atT">🎖️ Scrittori premio Nobel</h2><p class="sub">${nob.length} autori</p>`; $('atTabs').innerHTML = ''; $('atGrid').innerHTML = `<div class="hrow" style="flex-wrap:wrap; overflow:visible">${nob.map(atPortrait).join('')}</div>`; openOv('atOv'); return; }
+  if(key === '__italia'){
+    const L = atLists(), ita = L.ita, T = [['tutti', 'I più noti']].concat([['1800', 'Ottocento', w=>w.y < 1900], ['1900', 'Primo Novecento', w=>w.y >= 1900 && w.y < 1945], ['1945', 'Dopoguerra', w=>w.y >= 1945 && w.y < 1970], ['1970', 'Anni 70 e 80', w=>w.y >= 1970 && w.y < 1990], ['1990', 'Anni 90', w=>w.y >= 1990 && w.y < 2000], ['2000', 'Dal 2000', w=>w.y >= 2000],
+      ['g:giallo', 'Gialli', w=>w.g.includes('giallo') || w.g.includes('thriller')], ['g:storico', 'Storici', w=>w.g.includes('storico')], ['g:poesia', 'Poesia', w=>w.g.includes('poesia')], ['g:teatro', 'Teatro', w=>w.g.includes('teatro')], ['g:ragazzi', 'Ragazzi', w=>w.g.includes('ragazzi')], ['premi', 'Premiati', w=>w.aw.length]].filter(x=>ita.some(x[2]) && ita.filter(x[2]).length >= 4));
+    tab = tab || 'tutti'; const cur2 = T.find(x=>x[0] === tab) || T[0];
+    title = '🇮🇹 Letteratura italiana'; list = cur2[2] ? ita.filter(cur2[2]) : ita; sub = `${list.length} libri`;
+    tabs = T.map(x=>`<button type="button" data-atl="__italia" data-tb="${esc(x[0])}" aria-pressed="${x[0] === cur2[0]}">${esc(x[1])}</button>`).join('');
+  } else if(key.startsWith('au:')){
+    const a = AT.byA.get(key.slice(3)); if(!a) return; list = a.works.slice().sort((x, y)=>(x.y || 9999) - (y.y || 9999)); title = a.name;
+    const img = a.img ? `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(a.img)}?width=220` : '';
+    $('atHead').innerHTML = `<div style="display:flex; gap:16px; align-items:center">${img ? `<span class="ph2" style="width:84px;height:84px;border-radius:50%;background:var(--forest2) url('${esc(img)}') center/cover;flex:none;display:block"></span>` : ''}<div><h2 id="atT">${esc(a.name)}</h2><p class="sub">${esc([a.b ? 'nato nel ' + a.b : '', a.nob ? '🎖️ Premio Nobel' + (a.nob.length === 4 ? ' ' + a.nob : '') : '', list.length + (list.length === 1 ? ' libro' : ' libri') + ' nell\'atlante'].filter(Boolean).join(' · '))}</p></div></div>`;
+    $('atTabs').innerHTML = ''; $('atGrid').innerHTML = list.map(w=>atCard(w)).join(''); openOv('atOv'); return;
+  } else { const r = AT_LISTS[key]; if(!r) return; title = r.title; sub = r.sub; list = r.list; }
+  $('atHead').innerHTML = `<h2 id="atT">${esc(title)}</h2>${sub ? `<p class="sub">${esc(sub)}</p>` : ''}`;
+  $('atTabs').innerHTML = tabs;
+  let n = 60; const draw = () => { $('atGrid').innerHTML = list.slice(0, n).map(w=>atCard(w)).join('') + (list.length > n ? `<button type="button" class="more" id="atMore" style="grid-column:1/-1">Mostra altri (${list.length - n})</button>` : ''); };
+  draw(); $('atGrid').onclick = e=>{ if(e.target.closest('#atMore')){ n += 60; draw(); } };
+  openOv('atOv');
+}
+async function openWork(q){
+  const w = AT && AT.byQ.get(q); if(!w) return; const b = atOwned(w), en = LANG === 'en';
+  const aw = w.aw.slice().sort((x, y)=>y.y - x.y).map(a=>`<span class="chip">🏆 <b>${esc((AT && AT_AWN(a.c)) || a.c)}${a.y ? ' ' + a.y : ''}</b></span>`);
+  const chips = [w.k ? `<span class="chip">${esc(w.k[0].toUpperCase() + w.k.slice(1))}</span>` : ''].concat(w.g.map(g=>`<span class="chip">${esc(GEN_NAMES[g] || g)}</span>`)).concat(aw).concat(w.a.filter(a=>a.nob).map(a=>`<span class="chip">🎖️ <b>Nobel${a.nob.length === 4 ? ' ' + a.nob : ''}</b></span>`)).filter(Boolean);
+  $('wkBody').innerHTML = `<button class="x" data-close aria-label="Chiudi">×</button><div class="wk-head">${coverHTML({ titolo: w.t, autori: atAu(w), copertina: atCov(w, true) })}<div style="min-width:0"><h2 id="wkT">${esc(w.t)}</h2>
+    <p class="sub">${w.a.map(a=>`<button type="button" data-au="${esc(a.q)}">${esc(a.name)}</button>`).join(', ')}${w.y ? ' · ' + (w.y < 0 ? -w.y + ' a.C.' : w.y) : ''}</p>${w.o ? `<p class="note" style="margin:0 0 8px">Titolo originale: ${esc(w.o)}</p>` : ''}
+    <div class="bsum" style="display:block; margin:0"><div class="chips">${chips.join('')}</div></div></div></div>
+    <div class="wk-acts">${b ? `<button class="btn primary" type="button" data-openbook="${esc(b.id)}">${b.lista === 'wishlist' ? '💭 È nei tuoi desideri: apri' : '✓ Ce l\'hai: apri la scheda'}</button>` : `<button class="btn primary" type="button" data-wkadd="${esc(w.q)}">＋ Aggiungi alla libreria</button><button class="btn" type="button" data-wkwish="${esc(w.q)}">💭 Aggiungi ai desideri</button>`}</div>
+    <p class="wk-plot" id="wkPlot">${w.iw ? '<span class="note">Carico la trama da Wikipedia…</span>' : ''}</p>`;
+  openOv('wkOv');
+  if(w.iw && navigator.onLine !== false){
+    const ck = 'wk:' + w.q; let s = await kvGet(ck);
+    if(!s){ try{ const j = await jget(`https://it.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(w.iw.replace(/ /g, '_'))}`); s = j && j.extract ? { x: j.extract } : { x: '' }; kvSet(ck, s); }catch(e){ s = null; } }
+    const el = $('wkPlot'); if(el && $('wkT') && $('wkT').textContent === w.t) el.innerHTML = s && s.x ? `${esc(s.x)}<br><span class="note">Da Wikipedia · <a href="https://it.wikipedia.org/wiki/${encodeURIComponent(w.iw.replace(/ /g, '_'))}" target="_blank" rel="noopener">leggi tutto</a></span>` : '';
+  } else if(!w.iw){ $('wkPlot').innerHTML = ''; }
+}
+const AT_AWN = c => ({ S: 'Premio Strega', C: 'Premio Campiello', V: 'Premio Viareggio', B: 'Premio Bancarella', G: 'Prix Goncourt', K: 'Booker Prize', P: 'Premio Pulitzer', H: 'Premio Hugo', N: 'Premio Nebula', F: 'Premio Flaiano', E: 'Premio Edgar', I: 'International Booker', A: 'National Book Award', L: 'Campiello Giovani' })[c] || c;
+async function atAdd(q, wish){
+  const w = AT.byQ.get(q); if(!w) return; const cov = atCov(w, true);
+  if(wish){ books.push({ id: uid(), lista: 'wishlist', aggiunto: Date.now(), titolo: w.t, autori: atAu(w), annoOrig: w.y > 0 ? String(w.y) : '', titoloOrig: w.o || '', copertina: cov, isbn: w.isbn || '' }); await save(); _own = null; renderAll(); closeOv('wkOv'); toast(`💭 "${w.t}" aggiunto ai desideri`); if($('v-scopri').classList.contains('on')) renderAtlas(); return; }
+  closeOv('wkOv'); if($('atOv').classList.contains('open')) closeOv('atOv');
+  openBook(null, { titolo: w.t, autori: atAu(w), annoOrig: w.y > 0 ? String(w.y) : '', titoloOrig: w.o || '', copertina: cov });
+  $('sTitle').value = w.t; $('sAuthor').value = w.a[0] ? w.a[0].name : '';
+  if(w.isbn){ $('sIsbn').value = w.isbn; loadIsbn(w.isbn); } else if(navigator.onLine !== false) runFind();
+}
+document.addEventListener('click', e=>{
+  const d = e.target.closest('#atHero [data-dot]'); if(d){ e.stopPropagation(); heroGo(+d.dataset.dot); return; }
+  const k = e.target.closest('[data-wk]'); if(k){ openWork(k.dataset.wk); return; }
+  const a = e.target.closest('[data-au]'); if(a && AT){ atOpenList('au:' + a.dataset.au); return; }
+  const l = e.target.closest('[data-atl]'); if(l && AT){ atOpenList(l.dataset.atl, l.dataset.tb); return; }
+  const ad = e.target.closest('[data-wkadd]'); if(ad){ atAdd(ad.dataset.wkadd, false); return; }
+  const wi = e.target.closest('[data-wkwish]'); if(wi){ atAdd(wi.dataset.wkwish, true); return; }
+  const ob = e.target.closest('[data-openbook]'); if(ob){ closeOv('wkOv'); if($('atOv').classList.contains('open')) closeOv('atOv'); openBook(ob.dataset.openbook); return; }
+});
+document.addEventListener('input', e=>{ if(e.target.id === 'atQ') atSearch(e.target.value); });
 async function coverRepair(){   // in sottofondo: cerca le copertine che mancano (al massimo 12 per volta; ogni libro riprovato dopo un mese)
   if(navigator.onLine === false || window.__noRepair) return; const mon = new Date().toISOString().slice(0, 7); let n = 0, got = 0;
   for(const b of books.filter(b=>!b.copertina && toIsbn13(b.isbn || '') && b.copTry !== mon).slice(0, 12)){
@@ -2036,7 +2226,7 @@ async function init(){
   applyI18n();
   const saved = await kvGet('library'); if(Array.isArray(saved)){ books = saved; setTimeout(ebGc, 6000); }
   renderAll(); renderInstall(); autoSnapshot();
-  const h = location.hash.replace('#', ''); if(['reading', 'people', 'stats'].includes(h)) switchTab(h);
+  const h = location.hash.replace('#', ''); if(['scopri', 'reading', 'people', 'stats'].includes(h)) switchTab(h);
   setView(VIEW);
   try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
   try{ const lb = parseInt(localStorage.getItem('mpmlb_lastBackup') || '0', 10); if(books.length >= 5 && Date.now() - lb > 30 * 864e5) setTimeout(()=>toast(t('backupNudge')), 2500); }catch(e){}

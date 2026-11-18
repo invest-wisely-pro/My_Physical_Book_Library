@@ -101,3 +101,22 @@ PONTE PER LE BIBLIOTECHE ITALIANE (FACOLTATIVO, GRATIS, UNA VOLTA SOLA)
   Cloudflare permette 100.000 richieste al giorno: per una libreria personale non finiscono mai.
   Se non lo fai, l'app funziona lo stesso con le altre fonti; quando SBN non è raggiungibile, l'app smette di provarci
   per una settimana così le ricerche restano veloci.
+
+SCOPRI: L'ATLANTE DEI LIBRI (novembre 2026)
+===========================================
+  Nuova scheda "Scopri": libri da scoprire anche se non li hai, come nell'Atlante del cinema.
+  - In cima tre libri a rotazione, diversi ogni giorno: un capolavoro, un premiato di recente, uno di letteratura italiana.
+  - File: Premiati di recente, I capolavori, Letteratura italiana (con "Esplora": decenni e generi), Premio Strega,
+    Premio Campiello, Booker/Pulitzer/Goncourt, Scrittori premio Nobel (con ritratto), gialli, fantascienza, fantasy,
+    storici, avventura, horror, formazione, ragazzi, amore, Ottocento, Novecento, dal 2000, poesia, teatro.
+  - Ogni libro: copertina, autore (tocca il nome per tutti i suoi libri), anno, generi, premi, trama da Wikipedia,
+    "＋ Aggiungi alla libreria" (se c'è l'ISBN italiano la scheda si compila da sola) o "💭 Aggiungi ai desideri".
+    ✓ e 💭 sulle copertine = è già nella tua libreria / nei desideri.
+  - I dati vengono da Wikidata (quanto un libro è conosciuto nel mondo, premi, autori) e da Open Library (copertine, ISBN),
+    gratis e senza chiavi. I libri famosi solo in un paese asiatico restano fuori, a meno che abbiano vinto grandi premi.
+
+  UNA VOLTA SOLA, DOPO AVER CARICATO I FILE:
+  GitHub → Actions → "Indice libri e pubblicazione" → "Run workflow" → lascia rebuild = false e atlas = true → Run.
+  Ci vuole circa mezz'ora la prima volta (cerca le copertine); poi l'atlante si aggiorna da solo ogni martedì.
+  Finché non è pronto, la scheda "Scopri" dice che si sta preparando.
+  File nuovi o cambiati: index.html, sw.js, LEGGIMI.txt, .github/workflows/site.yml, tools/build_atlante.py.
