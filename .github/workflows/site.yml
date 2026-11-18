@@ -1,15 +1,18 @@
 name: Indice libri e pubblicazione
 on:
   push: { branches: [main] }
-  schedule: [{ cron: '17 4 1 * *' }]     # il 1° di ogni mese ricostruisce l'indice
+  schedule:
+    - cron: '17 4 1 * *'     # il 1° di ogni mese ricostruisce l'indice degli ISBN
+    - cron: '41 3 * * 2'     # ogni martedì aggiorna l'atlante (libri da scoprire, premi, autori)
   workflow_dispatch:
     inputs:
-      rebuild: { description: 'Ricostruire l indice da Open Library (true/false)', default: 'true' }
+      rebuild: { description: 'Ricostruire l indice degli ISBN da Open Library, richiede ore (true/false)', default: 'false' }
+      atlas: { description: 'Aggiornare l atlante dei libri da scoprire, circa mezz ora (true/false)', default: 'true' }
 permissions: { contents: write, pages: write, id-token: write }
 concurrency: { group: site, cancel-in-progress: false }
 jobs:
   data:
-    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.rebuild == 'true')
+    if: (github.event_name == 'schedule' && github.event.schedule == '17 4 1 * *') || (github.event_name == 'workflow_dispatch' && inputs.rebuild == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 300
     steps:
@@ -19,10 +22,27 @@ jobs:
       - run: node --max-old-space-size=6000 scripts/build-dump.mjs
       - name: Salva l'indice sul ramo data-store (senza far crescere la cronologia)
         run: |
+          curl -sfL "https://raw.githubusercontent.com/${{ github.repository }}/data-store/atlante.json.gz" -o data/atlante.json.gz || true   # l'atlante resta
           cd data && git init -q -b data-store && git config user.name indice-bot && git config user.email actions@users.noreply.github.com
           git add -A && git commit -qm "indice $(date -u +%F)" && git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data-store
-  deploy:
+  atlas:
     needs: data
+    if: always() && !cancelled() && ((github.event_name == 'schedule' && github.event.schedule == '41 3 * * 2') || (github.event_name == 'workflow_dispatch' && inputs.atlas == 'true'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: { ref: data-store, path: _ds }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: python tools/build_atlante.py _ds/atlante.json.gz
+      - name: Salva l'atlante sul ramo data-store
+        run: |
+          cd _ds && git config user.name indice-bot && git config user.email actions@users.noreply.github.com
+          git add atlante.json.gz && (git diff --cached --quiet || git commit -qm "atlante $(date -u +%F)") && git push
+  deploy:
+    needs: [data, atlas]
     if: always() && !cancelled()
     runs-on: ubuntu-latest
     environment: { name: github-pages, url: '${{ steps.d.outputs.page_url }}' }
