@@ -436,6 +436,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
       <button class="btn" id="tCsvIn" data-i18n="tCsvIn">📄 Importa CSV</button>
       <button class="btn" id="tLang"></button>
       <button class="btn" id="tGbKey" data-i18n="tGbKey">🔑 Chiave Google Books (facoltativa)</button>
+      <button class="btn" id="tBridge">🌉 Ponte per le biblioteche (facoltativo)</button>
       <button class="btn" id="tHealth" data-i18n="tHealth">🩺 Verifica servizi</button>
       <button class="btn" id="tIdx">🔄 Indice offline: guida</button>
       <button class="btn" id="tDiag" data-i18n="tDiag">🩺 Diagnostica</button>
@@ -500,7 +501,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
    Fonti: Google Books (edizioni, trame; senza chiave) e Open Library
    (edizioni, opere, copertine; libera). Tutto resta sul dispositivo.
    ===================================================================== */
-const APP_VERSION = 'books-2026-11-18c';
+const APP_VERSION = 'books-2026-11-18d';
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r=>setTimeout(r, ms));
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
@@ -762,18 +763,22 @@ function sbnItem(r){
 }
 // Il server SBN non permette ai siti di leggerlo direttamente (CORS): se il browser lo blocca si passa da un "ponte" pubblico gratuito,
 // che riceve solo l'ISBN o il titolo cercato. Si ricorda quale strada funziona.
-const SBN_WAYS = [u=>u, u=>'https://api.allorigins.win/raw?url=' + encodeURIComponent(u), u=>'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(u)];
+const sbnBridge = () => { try{ return (localStorage.getItem('mpmlb_sbnbridge') || '').trim(); }catch(e){ return ''; } };
+const SBN_WAYS = [u=>u, u=>'https://api.allorigins.win/raw?url=' + encodeURIComponent(u), u=>'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(u), u=>sbnBridge() ? sbnBridge().replace(/\/?$/, '/') + '?url=' + encodeURIComponent(u) : ''];
+const SBN_WAY_NAMES = ['diretto', 'ponte allorigins', 'ponte codetabs', 'ponte personale'];
 let _sbnWay = (()=>{ try{ return +(localStorage.getItem('mpmlb_sbnway') || 0) || 0; }catch(e){ return 0; } })();
+(()=>{ try{ if(Date.now() - (+localStorage.getItem('mpmlb_sbnoff') || 0) < 7 * 864e5) _sbnOff = true; }catch(e){} })();   // nessuna strada funzionava: si riprova fra una settimana (o da Verifica servizi)
 async function sbnGet(q){
   if(_sbnOff) throw new Error('cors');
-  let last = null;
-  for(let k = 0; k < SBN_WAYS.length; k++){ const w = (_sbnWay + k) % SBN_WAYS.length;
-    try{ const j = await jget(SBN_WAYS[w](SBN + q), _sbnMs); if(!j || typeof j !== 'object') throw new Error('bad');
+  let last = null; const order = sbnBridge() ? [3] : [_sbnWay, 0, 1, 2].filter((w, i, a)=>a.indexOf(w) === i && w !== 3);
+  for(const w of order){ const url = SBN_WAYS[w](SBN + q); if(!url) continue;
+    try{ const j = await jget(url, w === 0 || w === 3 ? _sbnMs : Math.min(_sbnMs, 9000)); if(!j || typeof j !== 'object') throw new Error('bad');
       if(w !== _sbnWay){ _sbnWay = w; try{ localStorage.setItem('mpmlb_sbnway', String(w)); }catch(e){} }
+      try{ localStorage.removeItem('mpmlb_sbnoff'); }catch(e){}
       return sbnArr(j.briefRecords).map(sbnItem).filter(x=>x && x.title); }
     catch(e){ last = e; if(/^http404/.test(String(e.message))) break; }
   }
-  if(last && (last.name === 'TypeError' || last.name === 'AbortError')) _sbnOff = true;   // nessuna strada: per questa sessione non si riprova
+  if(last && (last.name === 'TypeError' || last.name === 'AbortError')){ _sbnOff = true; try{ localStorage.setItem('mpmlb_sbnoff', String(Date.now())); }catch(e){} }
   throw last || new Error('src');
 }
 const sbnIsbn = isbn => sbnGet(`search.json?isbn=${isbn}&type=0&start=0&rows=5`).then(l=>l.map(x=>Object.assign(x, { isbn: x.isbn || isbn })));
@@ -1234,6 +1239,12 @@ $('plotTr').addEventListener('click', async ()=>{   // traduzione sul dispositiv
     cur.trama = await tr.translate(txt); cur.tramaSrc = (cur.tramaSrc ? cur.tramaSrc + ' · ' : '') + 'traduzione automatica'; fillForm();
   }catch(e){ toast('Traduzione non riuscita su questo browser'); } });
 $('findBtn').addEventListener('click', runFind);
+$('tBridge').addEventListener('click', ()=>{
+  const v = window.prompt('Indirizzo del tuo ponte per le biblioteche italiane (es. https://libri-sbn.tuonome.workers.dev). Lascia vuoto per toglierlo. La guida è nel file LEGGIMI.txt.', sbnBridge()); if(v === null) return;
+  const s = v.trim(); if(s && !/^https:\/\/[^\s]+$/.test(s)){ toast('Indirizzo non valido: deve iniziare con https://'); return; }
+  try{ if(s) localStorage.setItem('mpmlb_sbnbridge', s); else localStorage.removeItem('mpmlb_sbnbridge'); localStorage.removeItem('mpmlb_sbnoff'); localStorage.setItem('mpmlb_sbnway', s ? '3' : '0'); }catch(e){}
+  _sbnOff = false; _sbnWay = s ? 3 : 0; toast(s ? '🌉 Ponte salvato: prova con ⋯ → Verifica servizi' : 'Ponte tolto');
+});
 $('tGbKey').addEventListener('click', ()=>{
   const v = window.prompt(t('gbKeyPrompt'), gbKey()); if(v === null) return;
   try{ if(v.trim()) localStorage.setItem('mpmlb_gbkey', v.trim()); else localStorage.removeItem('mpmlb_gbkey'); }catch(e){}
@@ -1716,7 +1727,7 @@ async function runHealth(){
     catch(e){ if(/http429/.test(String(e.message))) return { warn: true, det: LANG === 'en' ? 'rate limit (429): the app switches to Open Library and the offline index' : 'limite di richieste (429): l\'app passa a Open Library e all\'indice offline' }; throw e; } }));
   add(await probe('Open Library', async ()=>{ const j = await jget('https://openlibrary.org/search.json?q=dante&limit=1&fields=key'); return { warn: !(j && j.docs), det: t('hcAnswered') }; }));
   add(await probe(t('hcCovers'), async ()=>{ await fetch('https://covers.openlibrary.org/b/id/8231856-S.jpg', { mode: 'no-cors' }); return {}; }));
-  add(await probe(LANG === 'en' ? 'Italian libraries (OPAC SBN)' : 'Biblioteche italiane (OPAC SBN)', async ()=>{ _sbnOff = false; const ms = _sbnMs; _sbnMs = 30000; let l; try{ l = await sbnIsbn('9788804668237'); } finally { _sbnMs = ms; } return { warn: !l.length, det: (l.length ? t('hcAnswered') + ' · ' + l[0].title : t('hcAnswered')) + ' · ' + ['diretto', 'ponte allorigins', 'ponte codetabs'][_sbnWay] }; }));
+  add(await probe(LANG === 'en' ? 'Italian libraries (OPAC SBN)' : 'Biblioteche italiane (OPAC SBN)', async ()=>{ _sbnOff = false; try{ localStorage.removeItem('mpmlb_sbnoff'); }catch(e){} const ms = _sbnMs; _sbnMs = 20000; let l; try{ l = await sbnIsbn('9788804668237'); } finally { _sbnMs = ms; } return { warn: !l.length, det: (l.length ? t('hcAnswered') + ' · ' + l[0].title : t('hcAnswered')) + ' · ' + SBN_WAY_NAMES[_sbnWay] }; }));
   add(await probe(LANG === 'en' ? 'Covers (Goodreads)' : 'Copertine (Goodreads)', async ()=>{ _grOff = false; const u = await grCover('9780140449136'); return { warn: !u }; }));
   add(await probe(LANG === 'en' ? 'Covers (Amazon)' : 'Copertine (Amazon)', async ()=>{ const u = await probeImg('https://m.media-amazon.com/images/P/0140449132.01._SCLZZZZZZZ_.jpg'); return { warn: !u }; }));
   add(await probe('Wikidata', async ()=>{ const e = await wdEntities(['Q1067'], 'labels'); return { warn: !e.Q1067 }; }));

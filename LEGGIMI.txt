@@ -86,3 +86,18 @@ NOVEMBRE 2026: TROVA PIÙ LIBRI, PIÙ COPERTINE, PIÙ VELOCE, PIÙ BELLA
     "Desideri"; sul telefono tre copertine per riga. Aprendo un libro vedi la sua scheda (dati, voto, stato di lettura,
     pagina) e la modifichi con "✏️ Modifica la scheda".
   - Nessuna azione su GitHub: caricando i file il sito si ripubblica da solo, l'indice resta quello già costruito.
+
+PONTE PER LE BIBLIOTECHE ITALIANE (FACOLTATIVO, GRATIS, UNA VOLTA SOLA)
+=======================================================================
+  Il catalogo SBN non permette ai siti web di leggerlo direttamente, e i "ponti" pubblici gratuiti sono spesso bloccati.
+  Con un tuo ponte personale su Cloudflare (gratis, nessuna carta di credito, nessuna chiave nell'app) funziona sempre.
+  1. Vai su dash.cloudflare.com e crea un account gratuito (basta l'email).
+  2. Nel menu: "Workers e Pages" (Compute → Workers) → "Crea" → "Inizia con Hello World" → nome: libri-sbn → "Distribuisci".
+  3. "Modifica codice": cancella tutto, incolla il contenuto del file tools/ponte-sbn-worker.js → "Distribuisci".
+  4. Copia l'indirizzo che Cloudflare ti mostra, tipo https://libri-sbn.TUONOME.workers.dev
+  5. Nell'app: ⋯ → "🌉 Ponte per le biblioteche" → incolla l'indirizzo → OK. Poi ⋯ → "🩺 Verifica servizi":
+     la riga "Biblioteche italiane" deve avere ✅ e "ponte personale".
+  Il ponte accetta solo richieste al catalogo SBN, quindi nessun altro può usarlo per altro. Il piano gratuito di
+  Cloudflare permette 100.000 richieste al giorno: per una libreria personale non finiscono mai.
+  Se non lo fai, l'app funziona lo stesso con le altre fonti; quando SBN non è raggiungibile, l'app smette di provarci
+  per una settimana così le ricerche restano veloci.
