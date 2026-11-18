@@ -71,3 +71,18 @@ CHIAVE GOOGLE BOOKS (FACOLTATIVA)
   crea una chiave gratuita (console.cloud.google.com → abilita "Books API" → Credenziali → Crea chiave API;
   conviene limitarla al tuo indirizzo github.io) e inseriscila in Strumenti → 🔑 Chiave Google Books.
   Resta solo sul tuo dispositivo e non finisce nei backup.
+
+NOVEMBRE 2026: TROVA PIÙ LIBRI, PIÙ COPERTINE, PIÙ VELOCE, PIÙ BELLA
+====================================================================
+  - Nuova fonte: il catalogo delle biblioteche italiane (OPAC SBN), che conosce quasi tutti i libri usciti in Italia.
+    Si usa sia con l'ISBN sia con titolo e autore, senza chiavi. Se il tuo browser non lo lascia usare, l'app se ne accorge
+    e va avanti con le altre fonti: lo vedi in ⋯ → "🩺 Verifica servizi" (riga "Biblioteche italiane").
+  - Copertine: oltre a Open Library e Google Books, l'app prova anche Goodreads e Amazon. Le copertine che mancano nella
+    tua libreria vengono cercate da sole in sottofondo (12 per volta; i libri senza copertina si riprovano ogni mese).
+  - Più veloce: con l'ISBN la scheda si compila subito con i dati principali, poi trama e copertina arrivano dopo
+    senza toccare quello che hai già scritto. La ricerca per titolo non scarica più l'indice offline (26 MB) se le fonti
+    in rete hanno già trovato il libro.
+  - Grafica: in cima alla libreria le file "Sto leggendo", "Aggiunti di recente", "Da leggere", "I tuoi preferiti",
+    "Desideri"; sul telefono tre copertine per riga. Aprendo un libro vedi la sua scheda (dati, voto, stato di lettura,
+    pagina) e la modifichi con "✏️ Modifica la scheda".
+  - Nessuna azione su GitHub: caricando i file il sito si ripubblica da solo, l'indice resta quello già costruito.

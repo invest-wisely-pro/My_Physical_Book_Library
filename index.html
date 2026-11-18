@@ -66,7 +66,34 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
 
 /* ---------- Libreria: libri con lo spessore delle pagine, segnalibro, taglio dorato ---------- */
 .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(132px, 1fr)); gap:28px 22px;}
-@media (max-width:420px){ .grid{grid-template-columns:repeat(2, minmax(0, 1fr)); gap:24px 16px;} }
+/* file in alto nella libreria (come negli altri Atlanti) */
+#shelfTop .hsec{margin:4px 0 22px;}
+#shelfTop h2{font-family:var(--serif); font-weight:800; font-size:20px; margin:0 0 10px; display:flex; align-items:baseline; gap:10px;}
+#shelfTop h2 small{font-family:var(--text); font-weight:500; font-size:13px; color:var(--paper3);}
+.hrow{display:flex; align-items:flex-start; gap:16px; overflow-x:auto; padding:2px 2px 10px; scroll-snap-type:x proximity; scrollbar-width:thin;}
+.hc{flex:0 0 118px; display:flex; flex-direction:column; justify-content:flex-start; background:none; border:0; padding:0; text-align:left; cursor:pointer; scroll-snap-align:start; color:inherit;}
+.hc .cover{display:block; position:relative; aspect-ratio:2/3; border-radius:4px; overflow:hidden; box-shadow:0 6px 16px rgba(0,0,0,.35), 4px 4px 0 -1px var(--pages); transition:transform .15s;}
+.hc:hover .cover{transform:translateY(-3px);}
+.hc .cover img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;}
+.hc b{display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-top:8px; font-family:var(--serif); font-size:13.5px; line-height:1.2;}
+.hc span.a{display:block; color:var(--paper2); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.hc .prog{display:block; margin-top:6px;}
+.all-h{font-family:var(--serif); font-weight:800; font-size:20px; margin:6px 0 4px;}
+/* scheda: riepilogo; le sezioni da modificare si aprono con "Modifica" */
+.bsum{margin:16px 0 4px; display:none;}
+.viewing .bsum{display:block;}
+.viewing .find, .viewing .sec.ed, .viewing #secRd{display:none;}
+.sheet.viewing{display:flex; flex-direction:column;} .sheet.viewing > *{order:5;} .sheet.viewing > .head-grid{order:1;} .sheet.viewing > .bsum{order:2;} .sheet.viewing > #plotSec{order:3;} .sheet.viewing > .foot{order:9;}
+.bsum .vs{display:flex; gap:2px; margin:8px 0 4px;} .bsum .vs button{background:none; border:0; font-size:26px; line-height:1; padding:2px; cursor:pointer; color:var(--paper3);} .bsum .vs button.on{color:var(--gold2);}
+.bsum .chips{display:flex; flex-wrap:wrap; gap:6px 8px; margin:0 0 12px;}
+.bsum .chip{border:1px solid var(--line); background:var(--leather); border-radius:999px; padding:5px 11px; font-size:13px; color:var(--paper2);}
+.bsum .chip b{color:var(--paper); font-weight:600;}
+.bsum .rs{display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 6px;}
+.bsum .rs button{height:38px; padding:0 14px; border-radius:19px; border:1px solid var(--line); background:var(--forest2); color:var(--paper); font-weight:600; cursor:pointer;}
+.bsum .rs button[aria-pressed="true"]{background:var(--gold); border-color:var(--gold); color:#1b1a12;}
+.bsum .edit{margin-top:8px;}
+.bsum .pgline{display:flex; align-items:center; gap:8px; margin:8px 0; color:var(--paper2);} .bsum .pgline input{width:96px; height:38px;}
+@media (max-width:640px){ .grid{grid-template-columns:repeat(3, minmax(0, 1fr)); gap:20px 12px;} .grid .bk-t{font-size:13px;} .grid .bk-a{font-size:12px;} .grid .bk-m{font-size:11px;} .hc{flex-basis:104px;} }
 .bk{background:none; border:0; padding:0; text-align:left; cursor:pointer; min-width:0;}
 .bk > span{display:block;}
 .book{position:relative; aspect-ratio:2/3; margin:0 9% 7% 0;}
@@ -265,6 +292,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
       </div>
     </div>
     <div class="install-card hidden" id="installCard"><span>📲 <b data-i18n="installCardT">Installa la Book Library sul telefono</b><br><small data-i18n="installCardP">Si apre come un'app, a schermo intero e anche offline.</small></span><span class="install-acts"><button class="btn primary" id="installGo" data-i18n="installGo">Installa</button><button class="btn" id="installNo" data-i18n="installNo">Non ora</button></span></div>
+    <div id="shelfTop"></div>
     <div class="count" id="count"></div>
     <div class="grid" id="grid"></div>
   </section>
@@ -299,7 +327,8 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
       </div>
     </div>
 
-    <div class="sec"><h3 data-i18n="secBook">Il libro</h3>
+    <div class="bsum" id="bSum"></div>
+    <div class="sec ed"><h3 data-i18n="secBook">Il libro</h3>
       <div class="row">
         <div class="f"><label for="fTitolo" data-i18n="fTitle">Titolo</label><input id="fTitolo"></div>
         <div class="f"><label for="fSottotitolo" data-i18n="fSubtitle">Sottotitolo</label><input id="fSottotitolo"></div>
@@ -309,7 +338,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
         <div class="f"><label for="fGenere" data-i18n="fGenre">Genere</label><input id="fGenere"></div>
       </div>
     </div>
-    <div class="sec"><h3 data-i18n="secEdition">L'edizione</h3>
+    <div class="sec ed"><h3 data-i18n="secEdition">L'edizione</h3>
       <div class="row">
         <div class="f"><label for="fEditore" data-i18n="fPublisher">Editore</label><input id="fEditore"></div>
         <div class="f"><label for="fCollana" data-i18n="fSeries">Collana</label><input id="fCollana" data-i18n-ph="seriesPh" placeholder="es. Oscar Mondadori"></div>
@@ -323,7 +352,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
         <div class="f"><label for="fRistampa" data-i18n="fPrinting">Ristampa</label><input id="fRistampa" data-i18n-ph="printingPh" placeholder="es. 3ª ristampa"></div>
       </div>
     </div>
-    <div class="sec"><h3 data-i18n="secCollector">Da collezionista</h3>
+    <div class="sec ed"><h3 data-i18n="secCollector">Da collezionista</h3>
       <div class="row">
         <label class="chk"><input type="checkbox" id="fPrima"><span data-i18n="fFirst">Prima edizione</span></label>
         <label class="chk"><input type="checkbox" id="fFirmato"><span data-i18n="fSigned">Firmato dall'autore</span></label>
@@ -336,7 +365,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
       </div>
       <details class="ghelp"><summary data-i18n="condHelp">Cosa significano gli stati?</summary><div id="condHelp"></div></details>
     </div>
-    <div class="sec"><h3 data-i18n="secReading">Lettura</h3>
+    <div class="sec" id="secRd"><h3 data-i18n="secReading">Lettura</h3>
       <div class="row">
         <div class="f"><label for="fLettura" data-i18n="fReadState">Stato</label><select id="fLettura"></select></div>
         <div class="f"><label for="fPagina" data-i18n="fCurPage">Pagina a cui sei</label><input id="fPagina" type="number" min="0"></div>
@@ -345,7 +374,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
       </div>
       <div class="f" style="margin-top:10px"><span style="font-size:12.5px; font-weight:600; color:var(--paper2)" data-i18n="fRating">Il tuo voto</span><div class="stars" id="stars" role="group" data-i18n-aria="fRating"></div></div>
     </div>
-    <div class="sec"><h3 data-i18n="secMine">La mia copia</h3>
+    <div class="sec ed"><h3 data-i18n="secMine">La mia copia</h3>
       <div class="row">
         <div class="f"><label for="fLista" data-i18n="fList">Lista</label><select id="fLista"></select></div>
         <div class="f"><label for="fPrezzo" data-i18n="fPrice">Prezzo pagato (€)</label><input id="fPrezzo" inputmode="decimal"></div>
@@ -471,7 +500,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
    Fonti: Google Books (edizioni, trame; senza chiave) e Open Library
    (edizioni, opere, copertine; libera). Tutto resta sul dispositivo.
    ===================================================================== */
-const APP_VERSION = 'books-2026-10-11';
+const APP_VERSION = 'books-2026-11-18';
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r=>setTimeout(r, ms));
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
@@ -614,7 +643,7 @@ function save(){ clearTimeout(_saveTimer); return new Promise(res=>{ _saveTimer 
 
 /* ---------- Fonti: Google Books + Open Library ---------- */
 async function fetchT(url, ms){ const c = new AbortController(), tm = setTimeout(()=>c.abort(), ms || 15000); try{ return await fetch(url, { signal: c.signal, headers: { 'Accept': 'application/json' } }); } finally { clearTimeout(tm); } }
-async function jget(url){ const r = await fetchT(url, 15000); if(r.status === 404) return null; if(!r.ok) throw new Error('http' + r.status); return r.json(); }
+async function jget(url, ms){ const r = await fetchT(url, ms || 9000); if(r.status === 404) return null; if(!r.ok) throw new Error('http' + r.status); return r.json(); }
 const toHttps = u => String(u || '').replace(/^http:\/\//, 'https://');
 const stripHtml = s => { const d = document.createElement('textarea'); d.innerHTML = String(s || '').replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n').replace(/<[^>]+>/g, ''); return d.value.replace(/\n{3,}/g, '\n\n').trim(); };
 function gbItem(it){
@@ -709,6 +738,50 @@ async function wdItTitle(o){   // "The Catcher in the Rye" → "Il giovane Holde
   return null;
 }
 
+/* ---------- OPAC SBN: il catalogo delle biblioteche italiane (quasi tutti i libri italiani). Gateway JSON dell'app ufficiale, senza chiavi.
+   Se il browser lo blocca (CORS) l'app se ne accorge e per questa sessione non lo richiama più. ---------- */
+let _sbnOff = false;
+const SBN = 'https://opac.sbn.it/opacmobilegw/';
+const sbnClean = s => String(s || '').replace(/[\u0080-\u009f\u0098\u009c]/g, '').replace(/\s*\[[^\]]*\]\s*/g, ' ').replace(/\s+/g, ' ').trim();
+const sbnArr = v => Array.isArray(v) ? v : v == null ? [] : [v];
+function sbnName(a){ a = sbnClean(String(a || '').replace(/<[^>]*>/g, '')).replace(/\s*\d{3,4}\s*-\s*(\d{3,4})?\s*$/, '').replace(/[,;]\s*$/, '').trim(); const m = a.match(/^([^,]+),\s*(.+)$/); return m ? (m[2] + ' ' + m[1]).trim() : a; }
+function sbnItem(r){
+  if(!r) return null;
+  const full = sbnClean(sbnArr(r.titolo)[0]), parts = full.split(' / '), head = parts[0].trim(), resp = parts.slice(1).join(' / ');
+  const tt = head.replace(/\s*[:;,.\/=]\s*$/, '').split(/\s+:\s+/), title = tt[0].replace(/\s*\.\s*$/, '').trim(), sub = tt.slice(1).join(': ').trim();
+  const pub = sbnClean(sbnArr(r.pubblicazione)[0]), pm = pub.match(/:\s*([^,;]+?)\s*,\s*\[?c?p?\s*(\d{4})/i) || pub.match(/:\s*([^,;]+)/);
+  const year = (pub.match(/(\d{4})(?!.*\d{4})/) || [])[1] || '', pages = (sbnClean(sbnArr(r.descrizioneFisica)[0]).match(/(\d+)\s*p\b/) || [])[1] || '';
+  const nums = sbnArr(r.numeri).concat(sbnArr(r.isbn)).map(String).join(' '), isbn = ((nums.replace(/-/g, '').match(/97[89]\d{10}|\b\d{9}[\dX]\b/) || [])[0]) || '';
+  let au = sbnName(sbnArr(r.autorePrincipale)[0]); if(!au){ const m = resp.match(/^([^;]+)/); au = m ? sbnClean(m[1]) : ''; }
+  const tr = (resp.match(/(?:traduzione|tradotto|trad\.)\s*(?:di|da|dall'[a-z]+ di)?\s*([^;.]+)/i) || [])[1] || '';
+  const coll = sbnClean(sbnArr(r.collezione)[0]).replace(/\s*;\s*\d+.*$/, '').replace(/^\s*\(|\)\s*$/g, '');
+  const cov = sbnArr(r.copertina).map(String).find(u=>/^https?:\/\//.test(u)) || '';
+  const lg = String(sbnArr(r.linguaPubblicazione)[0] || '').toLowerCase();
+  return { src: 'sbn', id: String(r.codiceIdentificativo || ''), title, sub, authors: au ? [au] : [], publisher: pm ? pm[1].trim() : '', year, pages: pages ? +pages : '',
+    isbn: toIsbn13(isbn), lang: /ital/.test(lg) || !lg ? 'it' : (/ingl|engl/.test(lg) ? 'en' : ''), cats: [], desc: '', cover: toHttps(cov), translator: sbnClean(tr), series: coll };
+}
+async function sbnGet(q){
+  if(_sbnOff) throw new Error('cors');
+  try{ const j = await jget(SBN + q, 7000); return sbnArr(j && j.briefRecords).map(sbnItem).filter(x=>x && x.title); }
+  catch(e){ if(e && e.name === 'TypeError') _sbnOff = true; throw e; }   // TypeError = bloccato dal browser
+}
+const sbnIsbn = isbn => sbnGet(`search.json?isbn=${isbn}&type=0&start=0&rows=5`).then(l=>l.map(x=>Object.assign(x, { isbn: x.isbn || isbn })));
+const sbnFind = o => sbnGet(`search.json?any=${encodeURIComponent([o.title, o.author].filter(Boolean).join(' '))}&type=0&start=0&rows=20`);
+
+/* ---------- Copertine: più strade, provate in ordine; un'immagine vale solo se è vera (non il riquadro vuoto) ---------- */
+function probeImg(u, min){ return new Promise(res=>{ if(!u) return res(''); const im = new Image(), tm = setTimeout(()=>res(''), 6000);
+  im.onload = () => { clearTimeout(tm); res(im.naturalWidth > (min || 20) && im.naturalHeight > (min || 20) ? u : ''); }; im.onerror = () => { clearTimeout(tm); res(''); }; im.referrerPolicy = 'no-referrer'; im.src = u; }); }
+async function grCover(isbn){ try{ const j = await jget(`https://bookcover.longitood.com/bookcover/${isbn}`, 6000); const u = j && j.url; return u && !/nophoto|no-cover/i.test(u) ? probeImg(u) : ''; }catch(e){ return ''; } }
+async function findCover(isbn, extra){
+  isbn = toIsbn13(isbn || ''); const cands = [].concat(extra || []).filter(Boolean);
+  for(const u of cands){ const ok = await probeImg(u); if(ok) return ok; }
+  if(!isbn) return '';
+  const ol = await probeImg(`https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg?default=false`); if(ol) return ol;
+  const gr = await grCover(isbn); if(gr) return gr;
+  const i10 = isbn13to10(isbn); if(i10){ const am = await probeImg(`https://m.media-amazon.com/images/P/${i10}.01._SCLZZZZZZZ_.jpg`); if(am) return am; }
+  return '';
+}
+
 /* ---------- Indice offline (data/books-index.json, rigenerato ogni mese da GitHub Actions) ---------- */
 let IDX = null; const _sh = new Map();
 const nrm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -751,28 +824,13 @@ async function olSearch(o){
 async function olEdition(isbn){ return jget(`https://openlibrary.org/isbn/${isbn}.json`); }
 function translatorFrom(s){ const m = String(s || '').match(/(?:trad(?:uzione|otto|otta|\.)?|translated)\s+(?:di|da|by)\s+([^;,.()\[\]]+)/i); return m ? m[1].trim() : ''; }
 function physFormat(s){ s = String(s || '').toLowerCase(); if(/hard|rileg|cartonat/.test(s)) return 'rilegato'; if(/mass market|pocket|tascab/.test(s)) return 'tascabile'; if(/paper|bross|soft/.test(s)) return 'brossura'; if(/box|cofanett/.test(s)) return 'cofanetto'; return s ? 'altro' : ''; }
-async function lookupIsbn(isbn, seed){
-  const x = await lookupIsbnCore(isbn, seed);
-  if(x && !x._empty){
-    if(x.titolo && (!x.copertina || !x.trama || !x.editore || !x.pagine)){
-      try{ const alt = await gbFind({ title: x.titolo, author: String(x.autori || '').split(',')[0].trim() });
-        const same = alt.find(a=>a.isbn === isbn);
-        if(same){ if(!x.copertina && same.cover) x.copertina = same.cover; if(!x.editore && same.publisher) x.editore = same.publisher; if(!x.pagine && same.pages) x.pagine = same.pages; if(!x.gbId) x.gbId = same.id; }
-        const twin = same || alt.find(a=>nrm(a.title) === nrm(x.titolo) && a.desc && (!a.lang || a.lang === (isItalianIsbn(isbn) ? 'it' : a.lang)));
-        if(!x.trama && twin && twin.desc){ x.trama = twin.desc; x.tramaSrc = 'Google Books'; }
-        if(!x.genere && twin && twin.cats && twin.cats.length) x.genere = genIt(twin.cats.slice(0, 2).join(', '));
-      }catch(e){}
-    }
-    if(!x.lingua && isItalianIsbn(isbn)) x.lingua = langName('it');
-  }
-  return x;
-}
+async function lookupIsbn(isbn, seed){ const x = await lookupIsbnCore(isbn, seed); return x && !x._empty ? lookupIsbnFinish(x) : x; }
 async function lookupIsbnCore(isbn, seed){
-  const [g, e, o, xr, bkr] = await Promise.allSettled([gbSearch({ isbn }), olEdition(isbn), olSearch({ isbn }), idxLookup(isbn), olBooksApi(isbn)]);
-  const ixv = xr.status === 'fulfilled' ? xr.value : null;
-  if(g.status === 'rejected' && e.status === 'rejected' && o.status === 'rejected' && !ixv) throw new Error('src');
-  const gb = seed || (g.status === 'fulfilled' && g.value[0]) || ixv || null, ed = e.status === 'fulfilled' ? e.value : null, ol = o.status === 'fulfilled' ? (o.value[0] || null) : null;
-  if(!gb && !ed && !ol) return { isbn, _empty: true };
+  const [g, e, o, xr, bkr, sr] = await Promise.allSettled([gbSearch({ isbn }), olEdition(isbn), olSearch({ isbn }), idxLookup(isbn), olBooksApi(isbn), sbnIsbn(isbn)]);
+  const ixv = xr.status === 'fulfilled' ? xr.value : null, sb = sr.status === 'fulfilled' ? (sr.value[0] || null) : null;
+  if(g.status === 'rejected' && e.status === 'rejected' && o.status === 'rejected' && !ixv && !sb) throw new Error('src');
+  const gb = seed || (g.status === 'fulfilled' && g.value[0]) || sb || ixv || null, ed = e.status === 'fulfilled' ? e.value : null, ol = o.status === 'fulfilled' ? (o.value[0] || null) : null;
+  if(!gb && !ed && !ol && !sb) return { isbn, _empty: true };
   const x = { isbn };
   x.titolo = (gb && gb.title) || (ed && ed.title) || (ol && ol.title) || '';
   x.sottotitolo = (gb && gb.sub) || (ed && ed.subtitle) || '';
@@ -792,8 +850,27 @@ async function lookupIsbnCore(isbn, seed){
   x.copertina = ed && (ed.covers || []).filter(c=>c > 0)[0] ? `https://covers.openlibrary.org/b/id/${ed.covers.filter(c=>c > 0)[0]}-L.jpg` : (gb && gb.cover) || (ol && ol.cover ? ol.cover.replace('-M.jpg', '-L.jpg') : '');
   x.olWork = (ed && (ed.works || [])[0] && ed.works[0].key) || (ol && ol.work) || '';
   x.olEdition = ed && ed.key ? ed.key : '';
-  x.gbId = gb ? gb.id : '';
-  return enrich(x, { isbn, ed, bk: bkr.status === 'fulfilled' ? bkr.value : null });
+  x.gbId = gb && gb.src === 'gb' ? gb.id : '';
+  if(sb){ ['editore', 'anno', 'pagine'].forEach((k, i)=>{ if(!x[k]) x[k] = [sb.publisher, sb.year, sb.pages][i]; }); if(!x.autori && sb.authors.length) x.autori = sb.authors.join(', ');
+    if(!x.traduttore && sb.translator) x.traduttore = sb.translator; if(!x.collana && sb.series) x.collana = sb.series; if(!x.lingua && sb.lang) x.lingua = langName(sb.lang); }
+  Object.defineProperty(x, '__c', { value: { isbn, ed, bk: bkr.status === 'fulfilled' ? bkr.value : null, covs: [sb && sb.cover] }, enumerable: false, configurable: true });
+  return x;
+}
+async function lookupIsbnFinish(x){   // seconda fase, mentre la scheda è già compilata: trama, generi, titolo originale, copertina
+  const c = x.__c || { isbn: x.isbn }; delete x.__c;
+  try{ x = await enrich(x, c); }catch(e){}
+  if(x.titolo && (!x.copertina || !x.trama || !x.editore || !x.pagine)){
+    try{ const alt = await gbFind({ title: x.titolo, author: String(x.autori || '').split(',')[0].trim() });
+      const same = alt.find(a=>a.isbn === x.isbn);
+      if(same){ if(!x.copertina && same.cover) x.copertina = same.cover; if(!x.editore && same.publisher) x.editore = same.publisher; if(!x.pagine && same.pages) x.pagine = same.pages; if(!x.gbId) x.gbId = same.id; }
+      const twin = same || alt.find(a=>nrm(a.title) === nrm(x.titolo) && a.desc && (!a.lang || a.lang === (isItalianIsbn(x.isbn) ? 'it' : a.lang)));
+      if(!x.trama && twin && twin.desc){ x.trama = twin.desc; x.tramaSrc = 'Google Books'; }
+      if(!x.genere && twin && twin.cats && twin.cats.length) x.genere = genIt(twin.cats.slice(0, 2).join(', '));
+    }catch(e){}
+  }
+  if(!x.copertina){ try{ x.copertina = await findCover(x.isbn, c.covs); }catch(e){} }
+  if(!x.lingua && isItalianIsbn(x.isbn)) x.lingua = langName('it');
+  return x;
 }
 /* ---------- Seconda fase: completa la scheda da più fonti, tutto in parallelo e senza chiavi ---------- */
 const descTxt = d => stripHtml(typeof d === 'string' ? d : (d && d.value) || '');
@@ -841,7 +918,7 @@ async function enrich(x, c){
     x.olWork ? jget(`https://openlibrary.org${x.olWork}.json`) : null,
     !x.trama && x.titolo ? wikiPlot(x.titolo, au) : null,
     x.titolo ? wdWork(x.titolo, au) : null,
-    !x.copertina ? probeCover(isbn) : null ]);
+    null ]);
   const W = wk.status === 'fulfilled' && wk.value, P = wp.status === 'fulfilled' && wp.value, D = wd.status === 'fulfilled' && wd.value, C = cv.status === 'fulfilled' && cv.value;
   if(W){ if(!x.trama && W.description){ x.trama = descTxt(W.description); x.tramaSrc = x.trama ? 'Open Library' : ''; }
     x._subj = (x._subj || []).concat(W.subjects || []); if(!x.annoOrig) x.annoOrig = (String(W.first_publish_date || '').match(/\d{4}/) || [])[0] || ''; }
@@ -928,6 +1005,21 @@ function coverHTML(b, big){
   return `<span class="cover">${b.copertina ? `<img src="${esc(b.copertina)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}<span class="ph" style="--phbg:hsl(${hash(b.titolo) % 360} 26% 24%)"><b style="font-size:${Math.max(10, Math.min(16, Math.floor(100 / (Math.max(...String(b.titolo || '—').split(/\s+/).map(w=>w.length)) * 0.62))))}px">${esc(b.titolo || '—')}</b><span>${esc(String(b.autori || '').split(',')[0])}</span></span></span>`;
 }
 const PAGE = 120; let _shown = PAGE, _io = null;
+function renderShelfTop(on){
+  const box = $('shelfTop'); if(!box) return; if(!on || books.length < 6){ box.innerHTML = ''; return; }
+  const en = LANG === 'en', card = b => { const pg = parseInt(b.pagine, 10) || 0, cp = parseInt(b.pagina, 10) || 0;
+    return `<button type="button" class="hc" data-id="${esc(b.id)}">${coverHTML(b)}<b>${esc(b.titolo || '—')}</b><span class="a">${esc(String(b.autori || '').split(',')[0])}</span>${b.lettura === 'inlettura' && pg ? `<span class="prog"><i style="width:${Math.min(100, Math.round(cp / pg * 100))}%"></i></span>` : ''}</button>`; };
+  const day = Math.floor(Date.now() / 864e5), mix = l => l.map((b, i)=>[(hash(b.id || b.titolo) + day * 2654435761) % 1000003, b]).sort((a, c)=>a[0] - c[0]).map(x=>x[1]);
+  const coll = books.filter(b=>(b.lista || 'collezione') !== 'wishlist');
+  const rows = [
+    [en ? '📖 Reading now' : '📖 Sto leggendo', '', books.filter(b=>b.lettura === 'inlettura')],
+    [en ? '🆕 Recently added' : '🆕 Aggiunti di recente', '', coll.filter(b=>b.aggiunto).sort((a, c)=>c.aggiunto - a.aggiunto).slice(0, 14)],
+    [en ? '📚 On your pile' : '📚 Da leggere', en ? 'changes every day' : 'cambia ogni giorno', mix(coll.filter(b=>b.lettura === 'daleggere')).slice(0, 14)],
+    [en ? '⭐ Your favourites' : '⭐ I tuoi preferiti', '', coll.filter(b=>(parseInt(b.voto, 10) || 0) >= 4).sort((a, c)=>(c.voto | 0) - (a.voto | 0) || hash(a.id) - hash(c.id)).slice(0, 14)],
+    [en ? '💭 Wishlist' : '💭 Desideri', '', books.filter(b=>(b.lista || 'collezione') === 'wishlist').slice(0, 14)] ].filter(r=>r[2].length >= (r[0].includes('📖') ? 1 : 3));
+  box.innerHTML = rows.map(([h, s, l])=>`<section class="hsec"><h2>${esc(h)}${s ? `<small>${esc(s)}</small>` : ''}</h2><div class="hrow">${l.map(card).join('')}</div></section>`).join('') + (rows.length ? `<h2 class="all-h">${en ? 'All your books' : 'Tutti i tuoi libri'}</h2>` : '');
+}
+document.addEventListener('click', e=>{ const c = e.target.closest('#shelfTop .hc'); if(c) openBook(c.dataset.id); });
 function renderGrid(){
   const all = books.length, list = filtered(), g = $('grid');
   const pages = list.reduce((s, b)=>s + (parseInt(b.pagine, 10) || 0), 0);
@@ -936,6 +1028,7 @@ function renderGrid(){
   if(!all){ g.innerHTML = `<div class="empty" style="grid-column:1/-1"><h2>${t('emptyT')}</h2><p>${t('emptyP')}</p><button class="ibtn" data-act="scan">📷 ${t('scanTitle')}</button><button class="ibtn primary" data-act="add">＋ ${t('add')}</button></div>`; return; }
   if(!list.length){ g.innerHTML = `<div class="empty" style="grid-column:1/-1"><p>${t('emptyF')}</p></div>`; return; }
   const shown = list.slice(0, _shown);
+  renderShelfTop(!filtering && VIEW !== 'spines');
   g.classList.toggle('spines', VIEW === 'spines');
   if(VIEW === 'spines') g.innerHTML = shown.map(spineHTML).join(''); else g.innerHTML = shown.map(b=>{
     const pg = parseInt(b.pagine, 10) || 0, cp = parseInt(b.pagina, 10) || 0;
@@ -989,8 +1082,29 @@ function fillForm(){
   renderStars(); renderLinks();
   $('edsSec').classList.toggle('hidden', !cur.olWork); _eds = null; $('edsList').innerHTML = '';
   if(cur.olWork) kvGet('ed:' + cur.olWork).then(c=>{ if(c && cur && Date.now() - (c.at || 0) < ED_TTL){ _eds = c; renderEditions(); } });
-  renderCurio(); renderEb();
+  renderCurio(); renderEb(); renderSum();
 }
+function renderSum(){
+  const box = $('bSum'); if(!box || !cur) return; const en = LANG === 'en';
+  const fm = cur.formato ? (t('fmt_' + cur.formato) !== 'fmt_' + cur.formato ? t('fmt_' + cur.formato) : cur.formato) : '';
+  const facts = [[en ? 'Publisher' : 'Editore', cur.editore], [en ? 'Series' : 'Collana', cur.collana], [en ? 'Edition' : 'Edizione', cur.anno], [en ? 'Pages' : 'Pagine', cur.pagine], [en ? 'Translated by' : 'Traduzione', cur.traduttore],
+    [en ? 'Original title' : 'Titolo originale', cur.titoloOrig], [en ? 'Genre' : 'Genere', cur.genere], [en ? 'Format' : 'Formato', fm], ['ISBN', cur.isbn], [en ? 'First edition' : 'Prima edizione', cur.primaEdizione ? '✓' : ''], [en ? 'Signed' : 'Firmato', cur.firmato ? '✓' : ''], [en ? 'Lent to' : 'Prestato a', cur.prestatoA]].filter(x=>x[1]);
+  const st = [['daleggere', t('rd_daleggere')], ['inlettura', t('rd_inlettura')], ['letto', t('rd_letto')]];
+  box.innerHTML = `<div class="chips">${facts.map(([k, v])=>`<span class="chip">${esc(k)} <b>${esc(v)}</b></span>`).join('')}</div>
+    <div class="vs" role="group" aria-label="${en ? 'Your rating' : 'Il tuo voto'}">${[1, 2, 3, 4, 5].map(n=>`<button type="button" data-vs="${n}" class="${(parseInt(cur.voto, 10) || 0) >= n ? 'on' : ''}" aria-label="${n}">★</button>`).join('')}</div>
+    <div class="rs" role="group">${st.map(([k, l])=>`<button type="button" data-rs="${k}" aria-pressed="${cur.lettura === k}">${esc(l)}</button>`).join('')}</div>
+    ${cur.lettura === 'inlettura' ? `<label class="pgline">${en ? 'Page' : 'Pagina'} <input type="number" min="0" inputmode="numeric" id="bPage" value="${esc(cur.pagina || '')}"> ${cur.pagine ? (en ? 'of ' : 'di ') + esc(cur.pagine) : ''}</label>` : ''}
+    <button type="button" class="btn edit" id="bEdit">✏️ ${en ? 'Edit details' : 'Modifica la scheda'}</button>`;
+}
+document.addEventListener('change', async e=>{ if(e.target.id !== 'bPage' || !cur) return; readForm(cur); const v = parseInt(e.target.value, 10); if(v >= 0) cur.pagina = v; else delete cur.pagina; $('fPagina').value = cur.pagina == null ? '' : cur.pagina;
+  const i = books.findIndex(x=>x.id === cur.id); if(i >= 0){ books[i] = JSON.parse(JSON.stringify(cur)); await save(); renderAll(); toast(t('saved')); } });
+document.addEventListener('click', async e=>{
+  const r = e.target.closest('#bSum [data-rs]'); if(r && cur){ readForm(cur); const k = r.dataset.rs; cur.lettura = cur.lettura === k ? '' : k; if(!cur.lettura) delete cur.lettura; $('fLettura').value = cur.lettura || ''; if(cur.lettura === 'letto' && cur.pagine){ cur.pagina = cur.pagine; $('fPagina').value = cur.pagine; } readForm(cur);
+    const i = books.findIndex(x=>x.id === cur.id); if(i >= 0){ books[i] = JSON.parse(JSON.stringify(cur)); await save(); renderAll(); toast(t('saved')); } fillForm(); return; }
+  const v = e.target.closest('#bSum [data-vs]'); if(v && cur){ readForm(cur); const n = +v.dataset.vs; if((parseInt(cur.voto, 10) || 0) === n) delete cur.voto; else cur.voto = n;
+    const i = books.findIndex(x=>x.id === cur.id); if(i >= 0){ books[i] = JSON.parse(JSON.stringify(cur)); await save(); renderAll(); } fillForm(); return; }
+  if(e.target.closest('#bEdit')){ document.querySelector('#bookOv .sheet').classList.remove('viewing'); const f = $('fTitolo'); if(f) f.focus(); }
+});
 function readForm(b){
   Object.entries(FIELDS).forEach(([id, k])=>{ const v = $(id).value.trim(); if(v) b[k] = (k === 'pagine' || k === 'pagina') ? (parseInt(v, 10) || '') : v; else delete b[k]; });
   Object.entries(CHECKS).forEach(([id, k])=>{ if($(id).checked) b[k] = true; else delete b[k]; });
@@ -1007,6 +1121,7 @@ function openBook(id, preset){
   _ebTouched = new Set(); fillForm(); $('results').innerHTML = '';
   $('sTitle').value = cur.titolo || ''; $('sAuthor').value = String(cur.autori || '').split(',')[0] || ''; $('sIsbn').value = cur.isbn || '';
   $('delBtn').classList.toggle('hidden', !b);
+  document.querySelector('#bookOv .sheet').classList.toggle('viewing', !!b && !!cur.titolo);
   openOv('bookOv'); loadCurio();
 }
 function applyBook(b, x){
@@ -1015,11 +1130,16 @@ function applyBook(b, x){
   if(b.genere) b.genere = genIt(b.genere);
   ['collana', 'formato', 'traduttore'].forEach(k=>{ if(x[k] && !b[k]) b[k] = x[k]; });   // dati che potresti aver corretto: solo se vuoti
 }
+function applyEmpty(b, x){   // completa solo i campi ancora vuoti (non tocca quello che hai già scritto)
+  ['titolo', 'sottotitolo', 'autori', 'editore', 'anno', 'annoOrig', 'pagine', 'lingua', 'titoloOrig', 'genere', 'trama', 'tramaSrc', 'copertina', 'olWork', 'gbId', 'collana', 'formato', 'traduttore']
+    .forEach(k=>{ if(x[k] !== undefined && x[k] !== '' && (b[k] === undefined || b[k] === '')) b[k] = x[k]; });
+  if(b.genere) b.genere = genIt(b.genere);
+}
 async function loadIsbn(isbn, seed){
   const box = $('results'), session = cur.id;
   box.innerHTML = `<div class="note">${t('loadingEd')}</div>`;
   try{
-    const x = await lookupIsbn(isbn, seed);
+    const x = await lookupIsbnCore(isbn, seed);
     if(!cur || cur.id !== session) return;
     if(!x || x._empty){ readForm(cur); cur.isbn = isbn; fillForm(); $('sIsbn').value = isbn; const en = LANG === 'en';
       box.innerHTML = `<div class="note">${en ? 'Valid ISBN, but the free sources don\'t have this edition yet. I wrote the ISBN in the form: fill in the rest by hand.' : 'ISBN valido, ma le fonti gratuite non hanno ancora questa edizione. Ho scritto l\'ISBN nel modulo: completa il resto a mano.'} <a href="https://www.ibs.it/search?ts=as&query=${isbn}" target="_blank" rel="noopener">IBS</a> · <a href="https://www.google.com/search?q=isbn+${isbn}" target="_blank" rel="noopener">Google</a> · <a href="https://opac.sbn.it/" target="_blank" rel="noopener">OPAC SBN</a></div>`; return; }
@@ -1028,7 +1148,14 @@ async function loadIsbn(isbn, seed){
     const miss = Object.keys(LBL).filter(k=>!x[k]), got = Object.keys(LBL).length - miss.length;
     box.innerHTML = `<div class="note">${LANG === 'en' ? `Filled ${got}/${Object.keys(LBL).length} fields` : `Compilati ${got} campi su ${Object.keys(LBL).length}`}${miss.length ? (LANG === 'en' ? ' — missing: ' : ' — mancano: ') + miss.map(k=>LBL[k]).join(', ') : ' ✅'}</div>`;
     $('sTitle').value = cur.titolo || ''; $('sIsbn').value = cur.isbn || '';
-    toast(t('edLoaded')); loadCurio();
+    toast(t('edLoaded'));
+    const note = box.querySelector('.note'); if(note) note.insertAdjacentHTML('beforeend', `<span class="finishing"> · ${LANG === 'en' ? '⏳ completing plot and cover…' : '⏳ completo trama e copertina…'}</span>`);
+    const y = await lookupIsbnFinish(x).catch(()=>x);
+    if(!cur || cur.id !== session) return;
+    readForm(cur); applyEmpty(cur, y); fillForm();
+    const miss2 = Object.keys(LBL).filter(k=>!cur[k]), got2 = Object.keys(LBL).length - miss2.length;
+    box.innerHTML = `<div class="note">${LANG === 'en' ? `Filled ${got2}/${Object.keys(LBL).length} fields` : `Compilati ${got2} campi su ${Object.keys(LBL).length}`}${miss2.length ? (LANG === 'en' ? ' — missing: ' : ' — mancano: ') + miss2.map(k=>LBL[k]).join(', ') : ' ✅'}</div>`;
+    loadCurio();
   }catch(e){ if(cur && cur.id === session) box.innerHTML = `<div class="note">${t('srcError')}</div>`; }
 }
 async function runFind(){
@@ -1042,16 +1169,17 @@ async function runFind(){
   const track = (name, p) => p.then(v=>{ if(st[name] !== 'ok') st[name] = 'ok'; return v; }, e=>{ if(st[name] !== 'ok') st[name] = why(e); return []; });
   try{
     const olP = olSearch(o).then(r=>(r.length || !onlyIt()) ? r : olSearch(Object.assign({}, o, { anyLang: true })));
-    const [g, ol, wa, itT] = await Promise.all([track('gb', gbSearch(o)), track('ol', olP), o.author ? wdAuthors(o.author).catch(()=>[]) : Promise.resolve([]), wdItTitle(o).catch(()=>null)]);
-    _wa = wa;
-    const ix = await idxSearch(o).catch(()=>[]); st.ix = IDX ? 'ok' : 'none';
+    const [g0, sb, ol, wa, itT] = await Promise.all([track('gb', gbSearch(o)), track('sbn', sbnFind(o)), track('ol', olP), o.author ? wdAuthors(o.author).catch(()=>[]) : Promise.resolve([]), wdItTitle(o).catch(()=>null)]);
+    _wa = wa; const g = g0.concat(sb);
+    const needIx = navigator.onLine === false || g.filter(isItalianItem).length < 4;   // l'indice offline (pesante) solo quando le fonti in rete trovano poco
+    const ix = needIx ? await idxSearch(o).catch(()=>[]) : []; st.ix = !IDX ? 'none' : needIx ? 'ok' : 'skip';
     let extra = [];
     if(itT && nrm(itT.it) && nrm(itT.it) !== nrm(o.title)){   // edizioni italiane di un libro straniero
       const o2 = { title: itT.it, author: o.author };
       const [g2, ix2] = await Promise.all([track('gb', gbSearch(o2)), idxSearch(o2).catch(()=>[])]);
       extra = g2.concat(ix2).map(x=>Object.assign(x, { via: itT.it }));
     }
-    if(st.gb !== 'ok' && st.ol !== 'ok' && !ix.length && !extra.length) throw new Error(st.gb === 'limit' ? 'limit' : 'src');
+    if(st.gb !== 'ok' && st.ol !== 'ok' && st.sbn !== 'ok' && !ix.length && !extra.length) throw new Error(st.gb === 'limit' ? 'limit' : 'src');
     let eds = rankEditions(dedupeEd([...extra, ...g, ...ix]), o, itT && itT.it);
     if(onlyIt()) eds = eds.filter(x=>isItalianItem(x) || !x.lang);
     _gb = eds; _ol = ol;
@@ -1065,8 +1193,8 @@ async function runFind(){
   finally{ btn.disabled = false; }
 }
 function srcLine(st, n){   // quali fonti hanno risposto, e perché qualcuna no
-  const s = k => st[k] === 'ok' ? '✓' : st[k] === 'limit' ? '⚠️' : st[k] === 'none' ? '—' : '✗';
-  let h = `<p class="note src-line">${esc(t('srcLine', { gb: s('gb'), ol: s('ol'), ix: s('ix') }))}</p>`;
+  const s = k => st[k] === 'ok' ? '✓' : st[k] === 'limit' ? '⚠️' : st[k] === 'none' || st[k] === 'skip' ? '—' : '✗';
+  let h = `<p class="note src-line">${esc(t('srcLine', { gb: s('gb'), ol: s('ol'), ix: s('ix') }))} · ${LANG === 'en' ? 'Italian libraries (SBN)' : 'biblioteche italiane (SBN)'} ${s('sbn')}</p>`;
   if(st.gb === 'limit') h += `<p class="note src-line">${esc(gbKey() ? t('gbLimitKey') : t('gbLimit'))}</p>`;
   else if(st.gb === 'down') h += `<p class="note src-line">${esc(t('gbDown'))}</p>`;
   return h;
@@ -1103,7 +1231,7 @@ $('results').addEventListener('click', e=>{
   if(r.dataset.a !== undefined){ const x = _wa[r.dataset.a]; if(x){ $('sAuthor').value = x.label; runFind(); } return; }
   if(r.dataset.g !== undefined){ const x = _gb[r.dataset.g]; if(!x) return;
     if(x.isbn) return loadIsbn(x.isbn, x);
-    readForm(cur); applyBook(cur, { titolo: x.title, sottotitolo: x.sub, autori: x.authors.join(', '), editore: x.publisher, anno: x.year, pagine: x.pages, lingua: x.lang ? langName(x.lang) : '', genere: x.cats.slice(0, 2).join(', '), trama: x.desc, tramaSrc: x.desc ? 'Google Books' : '', copertina: x.cover, gbId: x.id });
+    readForm(cur); applyBook(cur, { titolo: x.title, sottotitolo: x.sub, autori: x.authors.join(', '), editore: x.publisher, anno: x.year, pagine: x.pages, lingua: x.lang ? langName(x.lang) : '', genere: x.cats.slice(0, 2).join(', '), trama: x.desc, tramaSrc: x.desc ? 'Google Books' : '', copertina: x.cover, gbId: x.src === 'gb' ? x.id : '', collana: x.series || '', traduttore: x.translator || '' });
     fillForm(); $('results').innerHTML = ''; toast(t('edLoaded')); return; }
   if(r.dataset.o !== undefined){ const x = _ol[r.dataset.o]; if(!x) return;
     if(x.work){ $('results').innerHTML = `<div class="note">${t('loadingEd')}</div>`;
@@ -1571,6 +1699,9 @@ async function runHealth(){
     catch(e){ if(/http429/.test(String(e.message))) return { warn: true, det: LANG === 'en' ? 'rate limit (429): the app switches to Open Library and the offline index' : 'limite di richieste (429): l\'app passa a Open Library e all\'indice offline' }; throw e; } }));
   add(await probe('Open Library', async ()=>{ const j = await jget('https://openlibrary.org/search.json?q=dante&limit=1&fields=key'); return { warn: !(j && j.docs), det: t('hcAnswered') }; }));
   add(await probe(t('hcCovers'), async ()=>{ await fetch('https://covers.openlibrary.org/b/id/8231856-S.jpg', { mode: 'no-cors' }); return {}; }));
+  add(await probe(LANG === 'en' ? 'Italian libraries (OPAC SBN)' : 'Biblioteche italiane (OPAC SBN)', async ()=>{ _sbnOff = false; const l = await sbnIsbn('9788804668237'); return { warn: !l.length, det: l.length ? t('hcAnswered') + ' · ' + l[0].title : t('hcAnswered') }; }));
+  add(await probe(LANG === 'en' ? 'Covers (Goodreads)' : 'Copertine (Goodreads)', async ()=>{ const u = await grCover('9780140449136'); return { warn: !u }; }));
+  add(await probe(LANG === 'en' ? 'Covers (Amazon)' : 'Copertine (Amazon)', async ()=>{ const u = await probeImg('https://m.media-amazon.com/images/P/0140449132.01._SCLZZZZZZZ_.jpg'); return { warn: !u }; }));
   add(await probe('Wikidata', async ()=>{ const e = await wdEntities(['Q1067'], 'labels'); return { warn: !e.Q1067 }; }));
   add(await probe('Wikipedia', async ()=>{ const j = await jget('https://en.wikipedia.org/api/rest_v1/page/summary/Dante_Alighieri'); return { warn: !(j && j.extract) }; }));
   add({ name: LANG === 'en' ? 'Offline index' : 'Indice offline', ok: true, warn: !IDX || !IDX.n, ms: null, det: IDX ? `${IDX.n} ${LANG === 'en' ? 'books' : 'libri'} (${IDX.it} IT) · ${String(IDX.built || '').slice(0, 10) || '—'}` : (LANG === 'en' ? 'not loaded' : 'non caricato') });
@@ -1865,6 +1996,14 @@ document.addEventListener('visibilitychange', ()=>{ if(document.hidden) rdSavePo
 })();
 
 /* ---------- Avvio ---------- */
+async function coverRepair(){   // in sottofondo: cerca le copertine che mancano (al massimo 12 per volta; ogni libro riprovato dopo un mese)
+  if(navigator.onLine === false || window.__noRepair) return; const mon = new Date().toISOString().slice(0, 7); let n = 0, got = 0;
+  for(const b of books.filter(b=>!b.copertina && toIsbn13(b.isbn || '') && b.copTry !== mon).slice(0, 12)){
+    if(document.hidden) break; n++;
+    try{ const u = await findCover(b.isbn); if(u){ b.copertina = u; delete b.copTry; got++; } else b.copTry = mon; }catch(e){}
+  }
+  if(n){ await save(); if(got){ renderAll(); toast(LANG === 'en' ? `🖼️ Found ${got} missing cover${got > 1 ? 's' : ''}` : `🖼️ Trovate ${got} copertine mancanti`); } }
+}
 async function init(){
   applyI18n();
   const saved = await kvGet('library'); if(Array.isArray(saved)){ books = saved; setTimeout(ebGc, 6000); }
@@ -1873,7 +2012,7 @@ async function init(){
   setView(VIEW);
   try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
   try{ const lb = parseInt(localStorage.getItem('mpmlb_lastBackup') || '0', 10); if(books.length >= 5 && Date.now() - lb > 30 * 864e5) setTimeout(()=>toast(t('backupNudge')), 2500); }catch(e){}
-  loadIdx();
+  loadIdx(); setTimeout(coverRepair, 8000);
   if('serviceWorker' in navigator && location.protocol === 'https:'){
     const had = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener('controllerchange', ()=>{ if(had) toast(LANG === 'en' ? '🔄 App updated: the new version is active' : '🔄 App aggiornata: è attiva la nuova versione'); });
