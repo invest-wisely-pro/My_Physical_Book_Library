@@ -500,7 +500,7 @@ main{max-width:1200px; margin:0 auto; padding:18px 18px 40px;}
    Fonti: Google Books (edizioni, trame; senza chiave) e Open Library
    (edizioni, opere, copertine; libera). Tutto resta sul dispositivo.
    ===================================================================== */
-const APP_VERSION = 'books-2026-11-18b';
+const APP_VERSION = 'books-2026-11-18c';
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r=>setTimeout(r, ms));
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
@@ -760,10 +760,21 @@ function sbnItem(r){
   return { src: 'sbn', id: String(r.codiceIdentificativo || ''), title, sub, authors: au ? [au] : [], publisher: pm ? pm[1].trim() : '', year, pages: pages ? +pages : '',
     isbn: toIsbn13(isbn), lang: /ital/.test(lg) || !lg ? 'it' : (/ingl|engl/.test(lg) ? 'en' : ''), cats: [], desc: '', cover: toHttps(cov), translator: sbnClean(tr), series: coll };
 }
+// Il server SBN non permette ai siti di leggerlo direttamente (CORS): se il browser lo blocca si passa da un "ponte" pubblico gratuito,
+// che riceve solo l'ISBN o il titolo cercato. Si ricorda quale strada funziona.
+const SBN_WAYS = [u=>u, u=>'https://api.allorigins.win/raw?url=' + encodeURIComponent(u), u=>'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(u)];
+let _sbnWay = (()=>{ try{ return +(localStorage.getItem('mpmlb_sbnway') || 0) || 0; }catch(e){ return 0; } })();
 async function sbnGet(q){
   if(_sbnOff) throw new Error('cors');
-  try{ const j = await jget(SBN + q, _sbnMs); return sbnArr(j && j.briefRecords).map(sbnItem).filter(x=>x && x.title); }
-  catch(e){ if(e && e.name === 'TypeError') _sbnOff = true; throw e; }   // TypeError = bloccato dal browser
+  let last = null;
+  for(let k = 0; k < SBN_WAYS.length; k++){ const w = (_sbnWay + k) % SBN_WAYS.length;
+    try{ const j = await jget(SBN_WAYS[w](SBN + q), _sbnMs); if(!j || typeof j !== 'object') throw new Error('bad');
+      if(w !== _sbnWay){ _sbnWay = w; try{ localStorage.setItem('mpmlb_sbnway', String(w)); }catch(e){} }
+      return sbnArr(j.briefRecords).map(sbnItem).filter(x=>x && x.title); }
+    catch(e){ last = e; if(/^http404/.test(String(e.message))) break; }
+  }
+  if(last && (last.name === 'TypeError' || last.name === 'AbortError')) _sbnOff = true;   // nessuna strada: per questa sessione non si riprova
+  throw last || new Error('src');
 }
 const sbnIsbn = isbn => sbnGet(`search.json?isbn=${isbn}&type=0&start=0&rows=5`).then(l=>l.map(x=>Object.assign(x, { isbn: x.isbn || isbn })));
 const sbnFind = o => sbnGet(`search.json?any=${encodeURIComponent([o.title, o.author].filter(Boolean).join(' '))}&type=0&start=0&rows=20`);
@@ -771,15 +782,15 @@ const sbnFind = o => sbnGet(`search.json?any=${encodeURIComponent([o.title, o.au
 /* ---------- Copertine: più strade, provate in ordine; un'immagine vale solo se è vera (non il riquadro vuoto) ---------- */
 function probeImg(u, min){ return new Promise(res=>{ if(!u) return res(''); const im = new Image(), tm = setTimeout(()=>res(''), 6000);
   im.onload = () => { clearTimeout(tm); res(im.naturalWidth > (min || 20) && im.naturalHeight > (min || 20) ? u : ''); }; im.onerror = () => { clearTimeout(tm); res(''); }; im.referrerPolicy = 'no-referrer'; im.src = u; }); }
-async function grCover(isbn){ try{ const j = await jget(`https://bookcover.longitood.com/bookcover/${isbn}`, 12000); const u = j && j.url; return u && !/nophoto|no-cover/i.test(u) ? probeImg(u) : ''; }catch(e){ return ''; } }
+let _grOff = false;
+async function grCover(isbn){ if(_grOff) return ''; try{ const j = await jget(`https://bookcover.longitood.com/bookcover/${isbn}`, 10000); const u = j && j.url; return u && !/nophoto|no-cover/i.test(u) ? probeImg(u) : ''; }catch(e){ if(e && (e.name === 'AbortError' || e.name === 'TypeError')) _grOff = true; return ''; } }
 async function findCover(isbn, extra){
   isbn = toIsbn13(isbn || ''); const cands = [].concat(extra || []).filter(Boolean);
   for(const u of cands){ const ok = await probeImg(u); if(ok) return ok; }
   if(!isbn) return '';
   const ol = await probeImg(`https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg?default=false`); if(ol) return ol;
-  const gr = await grCover(isbn); if(gr) return gr;
   const i10 = isbn13to10(isbn); if(i10){ const am = await probeImg(`https://m.media-amazon.com/images/P/${i10}.01._SCLZZZZZZZ_.jpg`); if(am) return am; }
-  return '';
+  return grCover(isbn);
 }
 
 /* ---------- Indice offline (data/books-index.json, rigenerato ogni mese da GitHub Actions) ---------- */
@@ -1705,8 +1716,8 @@ async function runHealth(){
     catch(e){ if(/http429/.test(String(e.message))) return { warn: true, det: LANG === 'en' ? 'rate limit (429): the app switches to Open Library and the offline index' : 'limite di richieste (429): l\'app passa a Open Library e all\'indice offline' }; throw e; } }));
   add(await probe('Open Library', async ()=>{ const j = await jget('https://openlibrary.org/search.json?q=dante&limit=1&fields=key'); return { warn: !(j && j.docs), det: t('hcAnswered') }; }));
   add(await probe(t('hcCovers'), async ()=>{ await fetch('https://covers.openlibrary.org/b/id/8231856-S.jpg', { mode: 'no-cors' }); return {}; }));
-  add(await probe(LANG === 'en' ? 'Italian libraries (OPAC SBN)' : 'Biblioteche italiane (OPAC SBN)', async ()=>{ _sbnOff = false; const ms = _sbnMs; _sbnMs = 30000; let l; try{ l = await sbnIsbn('9788804668237'); } finally { _sbnMs = ms; } return { warn: !l.length, det: l.length ? t('hcAnswered') + ' · ' + l[0].title : t('hcAnswered') }; }));
-  add(await probe(LANG === 'en' ? 'Covers (Goodreads)' : 'Copertine (Goodreads)', async ()=>{ const u = await grCover('9780140449136'); return { warn: !u }; }));
+  add(await probe(LANG === 'en' ? 'Italian libraries (OPAC SBN)' : 'Biblioteche italiane (OPAC SBN)', async ()=>{ _sbnOff = false; const ms = _sbnMs; _sbnMs = 30000; let l; try{ l = await sbnIsbn('9788804668237'); } finally { _sbnMs = ms; } return { warn: !l.length, det: (l.length ? t('hcAnswered') + ' · ' + l[0].title : t('hcAnswered')) + ' · ' + ['diretto', 'ponte allorigins', 'ponte codetabs'][_sbnWay] }; }));
+  add(await probe(LANG === 'en' ? 'Covers (Goodreads)' : 'Copertine (Goodreads)', async ()=>{ _grOff = false; const u = await grCover('9780140449136'); return { warn: !u }; }));
   add(await probe(LANG === 'en' ? 'Covers (Amazon)' : 'Copertine (Amazon)', async ()=>{ const u = await probeImg('https://m.media-amazon.com/images/P/0140449132.01._SCLZZZZZZZ_.jpg'); return { warn: !u }; }));
   add(await probe('Wikidata', async ()=>{ const e = await wdEntities(['Q1067'], 'labels'); return { warn: !e.Q1067 }; }));
   add(await probe('Wikipedia', async ()=>{ const j = await jget('https://en.wikipedia.org/api/rest_v1/page/summary/Dante_Alighieri'); return { warn: !(j && j.extract) }; }));
